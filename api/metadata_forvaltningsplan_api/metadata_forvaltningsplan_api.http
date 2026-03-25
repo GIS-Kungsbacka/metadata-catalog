@@ -1,0 +1,6 @@
+@metadata_forvaltningsplan_api_HostAddress = http://localhost:5243
+
+GET {{metadata_forvaltningsplan_api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
