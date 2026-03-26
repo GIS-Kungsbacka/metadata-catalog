@@ -55,20 +55,18 @@ namespace metadata_forvaltningsplan_api.Data
                 Skalniva = "2",
                 NyckelOrd = ["Tätortsmiljö","Test"],
                 Kategori = "Nybyggnation",
-                Tidsperiod false,
-                TidsperiodStartdatum = 2026-04-15,
-                TidsperiodSlutdatum = 2026-06-15,
+                Tidsperiod = false,
+                TidsperiodStartdatum = new DateOnly(2026, 4, 15),
+                TidsperiodSlutdatum = new DateOnly(2026, 4, 15),
                 TidsUpplosning = "Sekund",
-                SkapelseDatum = 2026-02-14,
+                SkapelseDatum = new DateOnly(2026, 4, 14),
                 AnvandarBegransningLicens = false,
                 AnvandarBegransningLicensText = "Test",
                 RelateradeResurser = ["Nej"],
                 Status = "granskas",
                 Handlaggare = "Jag",
                 MetaDataVersion = "1.0",
-                SkapadTidPunkt = 2026-02-14 15:00:05 462671+01
-
-
+                SkapadTidPunkt = DateTimeOffset.Parse("2026-02-14T15:00:05.462671+01:00")
             }
         };
 
@@ -115,6 +113,7 @@ namespace metadata_forvaltningsplan_api.Data
             }
         }
 
+
         private void SaveData(List<Metadata> data)
         {
             lock (_lock)
@@ -127,15 +126,16 @@ namespace metadata_forvaltningsplan_api.Data
         public Task<IEnumerable<Metadata>> GetAllAsync()
         {
             var data = LoadData();
-            return Task.FromResult<IEnumerable<Metadata>>(data.OrderByDescending(x => x.ArendenummerArtvise));
+            return Task.FromResult<IEnumerable<Metadata>>(data.OrderByDescending(x => x.Gid));
         }
 
-        public Task<Metadata?> GetByIdAsync(string arendenummerArtvise)
+        public Task<Metadata?> GetByIdAsync(int gid)
         {
             var data = LoadData();
-            return Task.FromResult(data.FirstOrDefault(x => x.ArendenummerArtvise == arendenummerArtvise));
+            return Task.FromResult(data.FirstOrDefault(x => x.Gid == gid));
         }
     }
 
 }
+
 

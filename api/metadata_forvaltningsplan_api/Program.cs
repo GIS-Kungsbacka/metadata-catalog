@@ -1,4 +1,4 @@
-using metadata_forvaltningsplan_api.Data;
+﻿using metadata_forvaltningsplan_api.Data;
 using metadata_forvaltningsplan_api.Models.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Server.IISIntegration;
@@ -9,20 +9,51 @@ using Microsoft.Extensions.FileProviders;
 var builder = WebApplication.CreateBuilder(args);
 
 // ---- Data Storage Configuration ----
+// Check UseJsonFile setting and connection string
 var postgresConnection = builder.Configuration.GetConnectionString("Postgres");
+var useJsonFileSetting = builder.Configuration.GetValue<bool>("UseJsonFile", false);
 
+// Logic (priority order):
+// 1. If UseJsonFile is explicitly set to true → use JSON (regardless of connection string)
+// 2. If UseJsonFile is false/not set AND connection string exists → use Postgres
+// 3. If no connection string → use JSON (fallback)
+bool useJsonFile;
 
+if (useJsonFileSetting == true)
+{
+    // Explicitly set to use JSON file
+    useJsonFile = true;
+    Console.WriteLine("INFO: UseJsonFile is set to true, using JSON file storage");
+}
+else if (!string.IsNullOrWhiteSpace(postgresConnection))
+{
+    // UseJsonFile is false/not set and connection string exists → use Postgres
+    useJsonFile = false;
+    Console.WriteLine("INFO: Connection string found and UseJsonFile is false, using Postgres database");
+}
+else
+{
+    // No connection string available → fallback to JSON
+    useJsonFile = true;
+    Console.WriteLine("INFO: No connection string found, falling back to JSON file storage");
+}
+
+if (useJsonFile)
+{
+    builder.Services.AddScoped<IManagementPlanRepository, JsonManagementPlanRepository>();
+    builder.Services.AddScoped<IMetadataRepository, JsonMetadataRepository>();
+    Console.WriteLine("INFO: Using JSON file storage for forms data");
+}
+else
+{
     // Use Postgres database
     builder.Services.AddDbContext<AppDbContext>(options =>
         options.UseNpgsql(postgresConnection)
     );
-    builder.Services.AddScoped<IChecklistRepository, DbContextChecklistRepository>();
-    builder.Services.AddScoped<IOrderSummaryRepository, DbContextOrderSummaryRepository>();
     builder.Services.AddScoped<IManagementPlanRepository, DbContextManagementPlanRepository>();
     builder.Services.AddScoped<IMetadataRepository, DbContextMetadataRepository>();
     Console.WriteLine("INFO: Using Postgres database for forms data");
-
-
+}
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -75,7 +106,7 @@ else
 
 app.UseHttpsRedirection();
 
-// API routes only - admin and client are separate IIS applications
+// API routes only - client are separate IIS applications
 app.MapControllers();
 
 app.Run();

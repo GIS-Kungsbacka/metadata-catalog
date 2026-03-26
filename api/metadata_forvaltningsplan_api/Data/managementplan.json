@@ -1,3 +1,27 @@
-{
-
-}
+[
+  {
+    "Gid": 1,
+    "ArendeNummer": "263521",
+    "BestallareNamn": "Testnamn",
+    "BestallareEpost": "testnamn@test.com",
+    "Sakerhetsklass": "sk0_test",
+    "DatakallaTyp": "{Extern,organisation}",
+    "Schema": "sk0_schema_test",
+    "Namn": "lekplatser_test_123",
+    "Titel": "lekplatser_test_123",
+    "DataAgare": "Testnamn",
+    "DataForvaltare": "Jag",
+    "DataAdministrator": ["Jag"],
+    "DataKonsument": ["organisation"],
+    "RedigeringsKalla": ["Extern", "organisation"],
+    "Publicering": "Nej",
+    "OppnaData": false,
+    "Arkivering": "Nej",
+    "ArkiveringTidpunkt": "Ej planerad",
+    "Atkomst": ["Intern"],
+    "Status": "granskas",
+    "Handlaggare": "Jag",
+    "ForvaltningsplanVersion": "1.0",
+    "SkapadTidPunkt": "2026-02-14T15:00:05.462671+01:00"
+  }
+]
