@@ -54,6 +54,8 @@ else
     builder.Services.AddScoped<IMetadataRepository, DbContextMetadataRepository>();
     Console.WriteLine("INFO: Using Postgres database for forms data");
 }
+// ---- Windows Integrated Auth (IIS) ----
+builder.Services.AddAuthentication(IISDefaults.AuthenticationScheme);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -106,6 +108,8 @@ else
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
+app.UseAuthorization();
 // API routes only - client are separate IIS applications
 app.MapControllers();
 
