@@ -1,7 +1,4 @@
-import {
-  useQuery
-  type UseQueryResult,
-} from "@tanstack/react-query";
+import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { metadataRequests } from "../api/metadata-requests";
 import type { Metadata } from "../types/metadata";
 

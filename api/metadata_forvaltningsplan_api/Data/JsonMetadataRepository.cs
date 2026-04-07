@@ -67,6 +67,41 @@ namespace metadata_forvaltningsplan_api.Data
                 Handlaggare = "Jag",
                 MetaDataVersion = "1.0",
                 SkapadTidPunkt = DateTimeOffset.Parse("2026-02-14T15:00:05.462671+01:00")
+            },
+            new Metadata
+            {
+                Gid = 2,
+                SakerhetsKlassDokument = "sk-0-test.pdf",
+                ArendeNummer = "2026BM132",
+                BestallareNamn = "Testnamn2",
+                BestallareEpost = "testnamn2@test.com",
+                SakerhetsKlass = "sk0_test",
+                DataKallaTyp = "{Extern,organisation}",
+                Schema = "sk0_schema_test",
+                Namn = "lekplatser_test_123",
+                Beskrivning = "Test beskrivning",
+                Syfte = "Att identifiera alla lekplatser och ta en kopp kaffe",
+                Datakalla = ["Extern","organisation"],
+                Metod = "Fjärranalys",
+                Projekt = "Nej",
+                GeografiskBegransning = ["tätort","test"],
+                UppdateringsFrekvens = "Årligen",
+                Fullstandighet = "Fullständig",
+                Skalniva = "2",
+                NyckelOrd = ["Tätortsmiljö","Test"],
+                Kategori = "Hälsa",
+                Tidsperiod = false,
+                TidsperiodStartdatum = new DateOnly(2026, 4, 15),
+                TidsperiodSlutdatum = new DateOnly(2026, 4, 15),
+                TidsUpplosning = "Sekund",
+                SkapelseDatum = new DateOnly(2026, 4, 14),
+                AnvandarBegransningLicens = false,
+                AnvandarBegransningLicensText = "Test",
+                RelateradeResurser = ["Nej"],
+                Status = "granskas",
+                Handlaggare = "Jag",
+                MetaDataVersion = "1.0",
+                SkapadTidPunkt = DateTimeOffset.Parse("2026-02-14T15:00:05.462671+01:00")
             }
         };
 

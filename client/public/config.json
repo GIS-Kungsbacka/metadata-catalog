@@ -1,0 +1,28 @@
+{
+  "faviconHref": "favicon.svg",
+  "spinnerLogoLight": "kba-spinner-logo.svg",
+  "spinnerLogoDark": "kba-spinner-logo-two.svg",
+  "defaultCategoryImage": "kompass.jpg",
+  "categoryImages": {
+    "Administrativa gränser": "kompass.jpg",
+    "Arealtäckande bilder och bakgrundskartor": "bakgrundkartor.jpg",
+    "Areella näringar": "",
+    "Atmosfär, klimatologi och meteorologi": "",
+    "Biologi och ekologi": "",
+    "Byggnader och byggnadsanläggningar": "",
+    "Ekonomi": "",
+    "Fastigheter och fysisk planering": "",
+    "Försvar": "",
+    "Geovetenskap": "",
+    "Hälsa": "",
+    "Höjddata": "",
+    "Kust och hav": "",
+    "Miljö": "",
+    "Positionering": "",
+    "Samhälle och kultur": "",
+    "Sjöar och vattendrag": "",
+    "Tekniska försörjningssystem": "",
+    "Transporter": ""
+  }
+}
+

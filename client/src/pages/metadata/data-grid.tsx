@@ -3,16 +3,17 @@ import {
   Box,
   Container,
   Paper,
-  CircularProgress,
   Alert,
   Typography,
   Chip,
+  Button,
   Menu,
   MenuItem,
   ListItemText,
   Tooltip,
   TextField,
   keyframes,
+  CircularProgress,
 } from "@mui/material";
 
 import {
@@ -37,9 +38,11 @@ import FilterAltOutlinedIcon from "@mui/icons-material/FilterAltOutlined";
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 import DensityMediumOutlinedIcon from "@mui/icons-material/DensityMediumOutlined";
 import CancelIcon from "@mui/icons-material/Cancel";
+import ArrowBackOutlinedIcon from "@mui/icons-material/ArrowBackOutlined";
 
 import { useMetadata } from "../../hooks/useMetadata";
 import type { Metadata } from "../../types/metadata";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 
 const COLUMN_VISIBILITY_STORAGE_KEY = "metadata-column-visibility";
 
@@ -300,6 +303,12 @@ function renderStringArray(value: unknown) {
 }
 
 export default function MetadataGrid() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const selectedKategori = (searchParams.get("kategori") ?? "").trim();
+  const selectedKategoriLower = selectedKategori.toLowerCase();
+
   const {
     data: items = [],
     isLoading,
@@ -497,20 +506,44 @@ export default function MetadataGrid() {
     { field: "sakerhetsKlassDokument", headerName: "Dokument", minWidth: 200 },
   ];
 
-  const rows = items.map((item) => ({ ...item, id: item.gid }));
+  const filteredItems = selectedKategori
+    ? items.filter(
+        (i) => (i.kategori ?? "").toLowerCase() === selectedKategoriLower
+      )
+    : items;
+
+  const rows = filteredItems.map((item) => ({ ...item, id: item.gid }));
 
   return (
-    <Container maxWidth="xl" sx={{ mt: { xs: 1, md: 4 }, mb: 6 }}>
-      <Box mb={2}>
-        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+    <Container maxWidth="xl" sx={{ mt: { xs: 1, md: 4 } }}>
+      <Box
+        mb={2}
+        sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}
+      >
+        <Button
+          variant="text"
+          startIcon={<ArrowBackOutlinedIcon />}
+          onClick={() => navigate("/metadata")}
+          sx={{ textTransform: "capitalize" }}
+        >
+          Tillbaka
+        </Button>
+        <Typography variant="body2" sx={{ fontWeight: 600, ml: "auto" }}>
           Sök, filtrera, visa/dölj kolumner och exportera metadata.
         </Typography>
+        {selectedKategori ? (
+          <Chip
+            label={`Ämnesområde: ${selectedKategori} (${rows.length})`}
+            sx={{ ml: "auto" }}
+            variant="outlined"
+          />
+        ) : null}
       </Box>
 
       <Paper
         elevation={0}
         sx={{
-          height: { xs: 380, md: 520, lg: 650, xl: 760 },
+          height: { xs: 380, md: 520, lg: 650, xl: 700 },
           width: "100%",
           borderRadius: 3,
           border: "1px solid",
@@ -527,6 +560,11 @@ export default function MetadataGrid() {
           columns={columns}
           checkboxSelection={false}
           disableRowSelectionOnClick
+          onRowClick={(params) =>
+            navigate(`/metadata/${params.row.gid}`, {
+              state: { backTo: `/metadata/list${location.search}` },
+            })
+          }
           pageSizeOptions={[10, 25, 50]}
           pagination
           density={density}
@@ -561,6 +599,9 @@ export default function MetadataGrid() {
             "& .MuiDataGrid-cell": {
               borderBottom: "1px dotted",
               borderColor: "divider",
+            },
+            "& .MuiDataGrid-row:hover": {
+              cursor: "pointer",
             },
             "& .MuiDataGrid-cell:focus, & .MuiDataGrid-columnHeader:focus": {
               outline: "none",
