@@ -20,6 +20,7 @@ import {
   DataGrid,
   type GridColDef,
   type GridRenderCellParams,
+  type GridFilterModel,
   Toolbar,
   ToolbarButton,
   ColumnsPanelTrigger,
@@ -339,6 +340,12 @@ export default function MetadataGrid() {
 
   const [density, setDensity] = React.useState<GridDensity>("standard");
 
+  const [filterModel, setFilterModel] = React.useState<GridFilterModel>(() => ({
+    items: [],
+    quickFilterValues: [],
+    quickFilterExcludeHiddenColumns: false,
+  }));
+
   if (isLoading) {
     return (
       <Container maxWidth="xl">
@@ -558,6 +565,8 @@ export default function MetadataGrid() {
           localeText={GRID_DEFAULT_LOCALE_TEXT}
           rows={rows}
           columns={columns}
+          filterModel={filterModel}
+          onFilterModelChange={setFilterModel}
           checkboxSelection={false}
           disableRowSelectionOnClick
           onRowClick={(params) =>

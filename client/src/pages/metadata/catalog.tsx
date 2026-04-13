@@ -16,6 +16,7 @@ import { useNavigate } from "react-router-dom";
 import { useMetadata } from "../../hooks/useMetadata";
 import { useClientConfig } from "../../config/client-config";
 import { publicAssetUrl } from "../../utils/public-asset-url";
+import type { Metadata } from "../../types/metadata";
 
 type Category = {
   title: string;
@@ -47,6 +48,19 @@ function normalize(v: string) {
   return v.toLowerCase().trim();
 }
 
+function metadataToSearchText(it: Metadata) {
+  const parts: string[] = [];
+  for (const v of Object.values(it)) {
+    if (v == null) continue;
+    if (Array.isArray(v)) {
+      parts.push(v.filter(Boolean).join(" "));
+      continue;
+    }
+    parts.push(String(v));
+  }
+  return parts.join(" ");
+}
+
 export default function MetadataCatalog() {
   const navigate = useNavigate();
   const [query, setQuery] = React.useState("");
@@ -67,28 +81,47 @@ export default function MetadataCatalog() {
     return map;
   }, [items]);
 
+  const matchesByKategori = React.useMemo(() => {
+    const map = new Map<string, number>();
+    const q = normalize(query);
+    if (!q) return map;
+
+    for (const it of items) {
+      const k = (it.kategori ?? "").trim();
+      if (!k) continue;
+      const hay = normalize(metadataToSearchText(it));
+      if (!hay.includes(q)) continue;
+      map.set(k, (map.get(k) ?? 0) + 1);
+    }
+
+    return map;
+  }, [items, query]);
+
   const filtered = React.useMemo(() => {
     const q = normalize(query);
     if (!q) return CATEGORIES;
-    return CATEGORIES.filter((c) => normalize(c.title).includes(q));
-  }, [query]);
+    return CATEGORIES.filter((c) => {
+      if (normalize(c.title).includes(q)) return true;
+      return (matchesByKategori.get(c.title) ?? 0) > 0;
+    });
+  }, [matchesByKategori, query]);
 
   return (
     <Container maxWidth="xl" sx={{ mt: { xs: 1, md: 4 }, mb: 6 }}>
       <Box sx={{ mb: 2, textAlign: "center" }}>
         <Typography variant="h4" sx={{ fontWeight: 800, mb: 1 }}>
-          Kommunens metadatakatalog
+          Geodataavdelningens metadatakatalog
         </Typography>
         <Typography variant="body2" sx={{ mb: 5 }}>
-          Sök efter kommunens geodatamängder...
+          Sök efter geodatamängder...
         </Typography>
         <TextField
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Sök ämnesområde…"
+          placeholder="Sök…"
           size="small"
           fullWidth
-          sx={{ maxWidth: 700, mb: 2, backgroundColor: "background.paper" }}
+          sx={{ maxWidth: 700, mb: 3, backgroundColor: "background.paper" }}
           slotProps={{
             input: {
               startAdornment: (
@@ -107,7 +140,7 @@ export default function MetadataCatalog() {
         </Alert>
       ) : null}
 
-      <Grid container spacing={2}>
+      <Grid container spacing={4}>
         {filtered.map((c) => (
           // Config is keyed by title: config.categoryImages?.["Administrativa gränser"] = "kompass.jpg"
           <Grid key={c.title} size={{ xs: 12, sm: 6, md: 3 }}>
@@ -182,7 +215,11 @@ export default function MetadataCatalog() {
                       (
                       {isLoading
                         ? "…"
-                        : String(countsByKategori.get(c.title) ?? 0)}
+                        : String(
+                            query.trim()
+                              ? matchesByKategori.get(c.title) ?? 0
+                              : countsByKategori.get(c.title) ?? 0
+                          )}
                       )
                     </Box>
                   </Typography>

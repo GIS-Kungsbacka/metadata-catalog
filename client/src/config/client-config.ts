@@ -5,6 +5,8 @@ export type ClientConfig = {
   faviconHref?: string;
   spinnerLogoLight?: string;
   spinnerLogoDark?: string;
+  drawerLogoLight?: string;
+  drawerLogoDark?: string;
   defaultCategoryImage?: string;
   categoryImages?: Record<string, string>;
 };

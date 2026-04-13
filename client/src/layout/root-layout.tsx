@@ -24,6 +24,8 @@ import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
 
 import { getInitials, useAuth } from "../hooks/useAuth";
 import { SquareSpinnerComponent } from "../components/square-progress";
+import { useClientConfig } from "../config/client-config";
+import { publicAssetUrl } from "../utils/public-asset-url";
 
 const DRAWER_OPEN_KEY = "app-drawer-open";
 const DRAWER_WIDTH_OPEN = 260;
@@ -52,6 +54,7 @@ type RootLayoutProps = {
 
 export function RootLayout({ mode, onToggleMode }: RootLayoutProps) {
   const { user } = useAuth();
+  const config = useClientConfig();
   const [open, setOpen] = React.useState<boolean>(() => readDrawerOpen());
   const [isBootLoading, setIsBootLoading] = React.useState(true);
   const [siteLoadingMs] = React.useState<number>(() => pickSiteLoadingMs());
@@ -73,6 +76,12 @@ export function RootLayout({ mode, onToggleMode }: RootLayoutProps) {
   const drawerWidth = open ? DRAWER_WIDTH_OPEN : DRAWER_WIDTH_CLOSED;
   const username = user?.username ?? "";
   const initials = getInitials(username) || "U";
+  const drawerLogoSrc = React.useMemo(() => {
+    const fallback = mode === "light" ? "kbaLogo.png" : "kbaLogo_vit.png";
+    const fromConfig =
+      mode === "light" ? config.drawerLogoLight : config.drawerLogoDark;
+    return publicAssetUrl(fromConfig || fallback);
+  }, [config.drawerLogoDark, config.drawerLogoLight, mode]);
 
   if (isBootLoading) {
     return (
@@ -157,9 +166,7 @@ export function RootLayout({ mode, onToggleMode }: RootLayoutProps) {
             {open ? (
               <Box
                 component="img"
-                src={`${import.meta.env.BASE_URL.replace(/\/$/, "")}/${
-                  mode === "light" ? "kbaLogo.png" : "kbaLogo_vit.png"
-                }`}
+                src={drawerLogoSrc}
                 alt="Logo"
                 sx={{
                   width: 160,
