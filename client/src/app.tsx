@@ -6,7 +6,7 @@ import {
   RouterProvider,
   createBrowserRouter,
 } from "react-router-dom";
-import { CssBaseline, ThemeProvider, createTheme } from "@mui/material";
+import { CssBaseline, ThemeProvider } from "@mui/material";
 import "./index.css";
 
 import MetadataGrid from "./pages/metadata/data-grid";
@@ -14,6 +14,7 @@ import MetadataCatalog from "./pages/metadata/catalog";
 import ManagementPlanGrid from "./pages/management-plan/data-grid";
 import { RootLayout } from "./layout/root-layout";
 import FormView from "./pages/FormView";
+import { createAppTheme } from "./theme/create-app-theme";
 
 const queryClient = new QueryClient({
   defaultOptions: queryConfig,
@@ -44,29 +45,7 @@ function App() {
     });
   }, []);
 
-  const theme = React.useMemo(
-    () =>
-      createTheme({
-        palette: {
-          mode,
-          primary: {
-            main: mode === "light" ? "#0f62fe" : "#8ab4ff",
-          },
-          background: {
-            default: mode === "light" ? "#f6f8fb" : "#0f1115",
-            paper: mode === "light" ? "#ffffff" : "#171a20",
-          },
-        },
-        shape: {
-          borderRadius: 12,
-        },
-        typography: {
-          fontFamily:
-            "Inter, Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif",
-        },
-      }),
-    [mode]
-  );
+  const theme = React.useMemo(() => createAppTheme(mode), [mode]);
 
   const router = React.useMemo(
     () =>
@@ -92,7 +71,7 @@ function App() {
           },
         ],
         {
-          // Align router root with Vite base (e.g. /geodata-app/)
+          // Align router root with Vite base (e.g. /geodata/)
           basename: import.meta.env.BASE_URL,
         }
       ),

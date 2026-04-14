@@ -10,6 +10,7 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  Paper,
   Stack,
   Tooltip,
   Typography,
@@ -204,7 +205,12 @@ export function RootLayout({ mode, onToggleMode }: RootLayoutProps) {
               mx: 1,
               borderRadius: 2,
               "&.active": {
-                bgcolor: "action.selected",
+                bgcolor: (t) =>
+                  t.palette.mode === "dark"
+                    ? "rgba(138, 180, 255, 0.14)"
+                    : "rgba(15, 98, 254, 0.10)",
+                color: "primary.main",
+                "& .MuiListItemIcon-root": { color: "primary.main" },
               },
             }}
           >
@@ -222,7 +228,12 @@ export function RootLayout({ mode, onToggleMode }: RootLayoutProps) {
               mt: 0.5,
               borderRadius: 2,
               "&.active": {
-                bgcolor: "action.selected",
+                bgcolor: (t) =>
+                  t.palette.mode === "dark"
+                    ? "rgba(138, 180, 255, 0.14)"
+                    : "rgba(15, 98, 254, 0.10)",
+                color: "primary.main",
+                "& .MuiListItemIcon-root": { color: "primary.main" },
               },
             }}
           >
@@ -239,53 +250,69 @@ export function RootLayout({ mode, onToggleMode }: RootLayoutProps) {
         component="main"
         sx={{ flex: 1, minWidth: 0, p: { xs: 1.5, md: 2.5 } }}
       >
-        <Box
+        <Paper
+          variant="outlined"
           sx={{
-            display: "flex",
-            justifyContent: "flex-end",
-            alignItems: "center",
-            px: { xs: 1, md: 1.5 },
-            py: 1,
-            mb: 1,
+            position: "sticky",
+            top: 0,
+            zIndex: 1,
+            mb: 2,
+            borderRadius: 3,
+            overflow: "hidden",
+            backgroundColor: (t) =>
+              t.palette.mode === "dark"
+                ? "rgba(23, 26, 32, 0.75)"
+                : "rgba(255, 255, 255, 0.75)",
+            backdropFilter: "saturate(140%) blur(10px)",
           }}
         >
-          <Stack direction="row" spacing={1.5} alignItems="center">
-            <Tooltip
-              title={
-                mode === "dark"
-                  ? "Växla till ljust läge"
-                  : "Växla till mörkt läge"
-              }
-            >
-              <IconButton onClick={onToggleMode} color="primary">
-                {mode === "dark" ? (
-                  <LightModeOutlinedIcon />
-                ) : (
-                  <DarkModeOutlinedIcon />
-                )}
-              </IconButton>
-            </Tooltip>
-            <Stack direction="row" spacing={1} alignItems="center">
-              <Avatar
-                sx={{
-                  width: 34,
-                  height: 34,
-                  bgcolor: "primary.main",
-                  fontSize: 14,
-                }}
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "flex-end",
+              alignItems: "center",
+              px: { xs: 1.25, md: 2 },
+              py: 1,
+            }}
+          >
+            <Stack direction="row" spacing={1.5} alignItems="center">
+              <Tooltip
+                title={
+                  mode === "dark"
+                    ? "Växla till ljust läge"
+                    : "Växla till mörkt läge"
+                }
               >
-                {initials}
-              </Avatar>
-              <Typography
-                variant="body2"
-                sx={{ fontWeight: 600, maxWidth: 220 }}
-                noWrap
-              >
-                {username}
-              </Typography>
+                <IconButton onClick={onToggleMode} color="primary">
+                  {mode === "dark" ? (
+                    <LightModeOutlinedIcon />
+                  ) : (
+                    <DarkModeOutlinedIcon />
+                  )}
+                </IconButton>
+              </Tooltip>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Avatar
+                  sx={{
+                    width: 34,
+                    height: 34,
+                    bgcolor: "primary.main",
+                    fontSize: 14,
+                  }}
+                >
+                  {initials}
+                </Avatar>
+                <Typography
+                  variant="body2"
+                  sx={{ fontWeight: 650, maxWidth: 220 }}
+                  noWrap
+                >
+                  {username}
+                </Typography>
+              </Stack>
             </Stack>
-          </Stack>
-        </Box>
+          </Box>
+        </Paper>
 
         <Outlet />
       </Box>

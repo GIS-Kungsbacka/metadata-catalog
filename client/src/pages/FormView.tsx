@@ -21,6 +21,7 @@ import { useMetadataById } from "../hooks/useMetadata";
 import { useManagementPlanById } from "../hooks/useManagementPlan";
 import type { Metadata } from "../types/metadata";
 import type { ManagementPlan } from "../types/management-plan";
+import { statusChipColor } from "../utils/status-chip";
 
 const metadataFieldLabels: Partial<Record<keyof Metadata, string>> = {
   gid: "GID",
@@ -387,6 +388,7 @@ export default function FormView({
               <Chip
                 label={(item as any).status}
                 size="small"
+                color={statusChipColor((item as any).status)}
                 variant="outlined"
               />
             ) : null}

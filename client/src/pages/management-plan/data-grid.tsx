@@ -5,6 +5,7 @@ import {
   CircularProgress,
   Container,
   Paper,
+  Chip,
   Typography,
   Tooltip,
   TextField,
@@ -42,6 +43,7 @@ import ArrowBackOutlinedIcon from "@mui/icons-material/ArrowBackOutlined";
 
 import { useManagementPlan } from "../../hooks/useManagementPlan";
 import type { ManagementPlan } from "../../types/management-plan";
+import { statusChipColor } from "../../utils/status-chip";
 
 const COLUMN_VISIBILITY_STORAGE_KEY = "managementplan-column-visibility";
 
@@ -427,7 +429,23 @@ export default function ManagementPlanGrid({
       minWidth: 140,
       flex: 0.5,
     },
-    { field: "status", headerName: "Status", minWidth: 120, flex: 0.6 },
+    {
+      field: "status",
+      headerName: "Status",
+      minWidth: 120,
+      flex: 0.6,
+      renderCell: (params: GridRenderCellParams) =>
+        params.value ? (
+          <Chip
+            label={String(params.value)}
+            size="small"
+            color={statusChipColor(params.value)}
+            variant="filled"
+          />
+        ) : (
+          "-"
+        ),
+    },
     {
       field: "handlaggare",
       headerName: "Handläggare",

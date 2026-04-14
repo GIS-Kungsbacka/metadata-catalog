@@ -43,8 +43,10 @@ import CancelIcon from "@mui/icons-material/Cancel";
 import ArrowBackOutlinedIcon from "@mui/icons-material/ArrowBackOutlined";
 
 import { useMetadata } from "../../hooks/useMetadata";
+import { useManagementPlan } from "../../hooks/useManagementPlan";
 import type { Metadata } from "../../types/metadata";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { statusChipColor } from "../../utils/status-chip";
 
 const COLUMN_VISIBILITY_STORAGE_KEY = "metadata-column-visibility";
 
@@ -125,6 +127,7 @@ function writeGridPreferences(prefs: {
 const defaultColumnVisibility = {
   gid: true,
   namn: true,
+  forvaltningsplanTitel: true,
   schemaNamn: true,
   sakerhetsKlass: true,
   status: true,
@@ -365,14 +368,6 @@ function MetadataToolbar({
   );
 }
 
-function statusChipColor(s: string | undefined) {
-  const v = (s ?? "").toLowerCase().trim();
-  if (!v) return "default";
-  if (v === "granskas" || v === "granskas ") return "warning";
-  if (v === "klar" || v === "godkand" || v === "godkänd") return "success";
-  return "default";
-}
-
 function renderStringArray(value: unknown) {
   if (!Array.isArray(value)) return value ? String(value) : "";
   return value.filter(Boolean).join(", ");
@@ -392,6 +387,18 @@ export default function MetadataGrid({ mode }: { mode: "light" | "dark" }) {
     failureCount,
     isRefetchError,
   } = useMetadata();
+
+  const { data: managementPlans = [] } = useManagementPlan();
+  const planTitleByKey = React.useMemo(() => {
+    const map = new Map<string, string>();
+    for (const p of managementPlans) {
+      const schema = (p.schemaNamn ?? "").trim();
+      const namn = (p.namn ?? "").trim();
+      if (!schema && !namn) continue;
+      map.set(`${schema}||${namn}`, (p.titel ?? p.namn ?? "").trim());
+    }
+    return map;
+  }, [managementPlans]);
 
   const [gridPrefs, setGridPrefs] = React.useState(() => readGridPreferences());
   const { columnVisibilityModel, density, pageSize } = gridPrefs;
@@ -486,8 +493,25 @@ export default function MetadataGrid({ mode }: { mode: "light" | "dark" }) {
         <Box sx={{ pl: 2 }}>{params.value}</Box>
       ),
     },
+    {
+      field: "arendeNummerOpenE",
+      headerName: "Ärendenummer OpenE",
+      minWidth: 180,
+      flex: 1,
+    },
     // "namn" is often short in this dataset, so keep it compact.
     { field: "namn", headerName: "Namn", minWidth: 110, flex: 0.4 },
+    {
+      field: "forvaltningsplanTitel",
+      headerName: "Titel",
+      minWidth: 170,
+      flex: 0.7,
+      valueGetter: (_value, row) => {
+        const schema = (row.schemaNamn ?? "").trim();
+        const namn = (row.namn ?? "").trim();
+        return planTitleByKey.get(`${schema}||${namn}`) ?? "";
+      },
+    },
     { field: "schemaNamn", headerName: "Schema", minWidth: 140, flex: 0.7 },
     {
       field: "sakerhetsKlass",
@@ -517,12 +541,6 @@ export default function MetadataGrid({ mode }: { mode: "light" | "dark" }) {
       headerName: "Handläggare",
       minWidth: 170,
       flex: 0.6,
-    },
-    {
-      field: "arendeNummerOpenE",
-      headerName: "Ärendenummer",
-      minWidth: 150,
-      flex: 0.5,
     },
     {
       field: "bestallareNamn",

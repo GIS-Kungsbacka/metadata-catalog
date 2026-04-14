@@ -1,7 +1,7 @@
 import axios, { type AxiosError, type AxiosResponse } from "axios";
 
 // Get API base URL from environment variable, default to /api
-const apiBase = import.meta.env.VITE_API_BASE || "/geodata-app/api";
+const apiBase = import.meta.env.VITE_API_BASE || "/geodata/api";
 
 export const api = axios.create({
   baseURL: apiBase,

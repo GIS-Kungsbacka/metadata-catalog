@@ -9,6 +9,7 @@ import {
   CardActionArea,
   CardContent,
   Alert,
+  Chip,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
@@ -210,17 +211,29 @@ export default function MetadataCatalog() {
                     variant="body2"
                     sx={{ fontWeight: 700, textAlign: "center" }}
                   >
-                    {c.title}{" "}
-                    <Box component="span" sx={{ color: "text.secondary" }}>
-                      (
-                      {isLoading
-                        ? "…"
-                        : String(
-                            query.trim()
-                              ? matchesByKategori.get(c.title) ?? 0
-                              : countsByKategori.get(c.title) ?? 0
-                          )}
-                      )
+                    <Box
+                      sx={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 1,
+                        flexWrap: "wrap",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Box component="span">{c.title}</Box>
+                      <Chip
+                        size="small"
+                        variant="filled"
+                        label={
+                          isLoading
+                            ? "…"
+                            : String(
+                                query.trim()
+                                  ? matchesByKategori.get(c.title) ?? 0
+                                  : countsByKategori.get(c.title) ?? 0
+                              )
+                        }
+                      />
                     </Box>
                   </Typography>
                 </CardContent>
