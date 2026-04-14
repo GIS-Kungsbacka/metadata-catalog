@@ -25,20 +25,20 @@ import type { ManagementPlan } from "../types/management-plan";
 const metadataFieldLabels: Partial<Record<keyof Metadata, string>> = {
   gid: "GID",
   namn: "Namn",
-  schema: "Schema",
+  schemaNamn: "Schema",
   beskrivning: "Beskrivning",
+  ursprung: "Ursprung",
   syfte: "Syfte",
   kategori: "Kategori",
   status: "Status",
   handlaggare: "Handläggare",
-  arendeNummer: "Ärendenummer",
+  arendeNummerOpenE: "Ärendenummer",
   bestallareNamn: "Beställare",
   bestallareEpost: "Beställare e-post",
   sakerhetsKlass: "Säkerhetsklass",
-  sakerhetsKlassDokument: "Säkerhetsklass dokument",
   dataKallaTyp: "Datakälla typ",
-  datakalla: "Datakälla",
   metod: "Metod",
+  metodUrl: "Metod URL",
   projekt: "Projekt",
   geografiskBegransning: "Geografisk begränsning",
   uppdateringsFrekvens: "Uppdateringsfrekvens",
@@ -53,8 +53,8 @@ const metadataFieldLabels: Partial<Record<keyof Metadata, string>> = {
   anvandarBegransningLicens: "Licensbegränsning",
   anvandarBegransningLicensText: "Licenstext",
   relateradeResurser: "Relaterade resurser",
+  kolumnBeskrivningUrl: "Kolumnbeskrivning URL",
   metaDataVersion: "Version",
-  skapadTidPunkt: "Skapad",
 };
 
 const managementPlanFieldLabels: Partial<Record<keyof ManagementPlan, string>> =
@@ -62,10 +62,10 @@ const managementPlanFieldLabels: Partial<Record<keyof ManagementPlan, string>> =
     gid: "GID",
     namn: "Namn",
     titel: "Titel",
-    schema: "Schema",
+    schemaNamn: "Schema",
     status: "Status",
     handlaggare: "Handläggare",
-    arendeNummer: "Ärendenummer",
+    arendeNummberOpenE: "Ärendenummer",
     bestallareNamn: "Beställare",
     bestallareEpost: "Beställare e-post",
     sakerhetsklass: "Säkerhetsklass",
@@ -75,17 +75,56 @@ const managementPlanFieldLabels: Partial<Record<keyof ManagementPlan, string>> =
     dataAdministrator: "Dataadministratör",
     dataKonsument: "Datakonsument",
     redigeringsKalla: "Redigeringskälla",
-    publicering: "Publicering",
+    publicerad: "Publicerad",
     oppnaData: "Öppna data",
+    dokumentSkUrl: "Dokument SK URL",
+    dokuementInfoUrl: "Dokument info URL",
+    ovrigInformation: "Övrig information",
+    kritiskDatamangd: "Kritisk datamängd",
     arkivering: "Arkivering",
     arkiveringTidpunkt: "Arkivering tidpunkt",
     atkomst: "Åtkomst",
+    integration: "Integration",
     forvaltningsplanVersion: "Version",
     skapadTidPunkt: "Skapad",
+    skapadAv: "Skapad av",
+    andradTidPunkt: "Ändrad",
+    andradAv: "Ändrad av",
   };
 
-function formatValue(value: unknown): string {
+function formatDateOnly(value: unknown): string | undefined {
+  if (value === null || value === undefined) return undefined;
+
+  if (typeof value === "string") {
+    const v = value.trim();
+    const m = v.match(/^(\d{4}-\d{2}-\d{2})/);
+    if (m) return m[1];
+    const d = new Date(v);
+    if (!Number.isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+    return undefined;
+  }
+
+  if (typeof value === "number") {
+    const d = new Date(value);
+    if (!Number.isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+    return undefined;
+  }
+
+  if (value instanceof Date) {
+    if (!Number.isNaN(value.getTime())) return value.toISOString().slice(0, 10);
+    return undefined;
+  }
+
+  return undefined;
+}
+
+function formatValue(value: unknown, key?: string): string {
   if (value === null || value === undefined) return "-";
+
+  if (key === "skapadTidPunkt" || key === "andradTidPunkt") {
+    return formatDateOnly(value) ?? "-";
+  }
+
   if (typeof value === "boolean") return value ? "Ja" : "Nej";
   if (Array.isArray(value)) return value.filter(Boolean).join(", ");
   return String(value);
@@ -140,7 +179,7 @@ function generatePDF(
   Object.keys(fieldLabels).forEach((key) => {
     const label = fieldLabels[key];
     if (!label) return;
-    const value = formatValue(item[key]);
+    const value = formatValue(item[key], key);
     addText(`${label}: ${value}`, 11);
   });
 
@@ -265,7 +304,7 @@ export default function FormView({
     if (!label) return null;
 
     const value = (item as unknown as Record<string, unknown>)[key];
-    const display = formatValue(value);
+    const display = formatValue(value, key);
 
     return (
       <Grid size={{ xs: 12, sm: 6 }} key={key}>

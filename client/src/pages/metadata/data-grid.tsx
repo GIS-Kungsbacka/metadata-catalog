@@ -31,6 +31,7 @@ import {
   ExportCsv,
   ExportPrint,
   type GridDensity,
+  type GridPaginationModel,
 } from "@mui/x-data-grid";
 
 import { GRID_DEFAULT_LOCALE_TEXT } from "../../../constants/sv";
@@ -47,29 +48,103 @@ import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 
 const COLUMN_VISIBILITY_STORAGE_KEY = "metadata-column-visibility";
 
+type GridPreferenceEntry =
+  | { key: "columnVisibilityModel"; value: Record<string, boolean> }
+  | { key: "density"; value: GridDensity }
+  | { key: "pageSize"; value: number };
+
+type GridPreferenceStore = GridPreferenceEntry[];
+
+function readGridPreferences(): {
+  columnVisibilityModel: Record<string, boolean>;
+  density: GridDensity;
+  pageSize: number;
+} {
+  const fallback = {
+    columnVisibilityModel: defaultColumnVisibility,
+    density: "standard" as GridDensity,
+    pageSize: 10,
+  };
+
+  try {
+    const raw = localStorage.getItem(COLUMN_VISIBILITY_STORAGE_KEY);
+    if (!raw) return fallback;
+
+    const parsed: unknown = JSON.parse(raw);
+
+    // Back-compat: older versions stored just the visibility object.
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      return {
+        ...fallback,
+        columnVisibilityModel: parsed as Record<string, boolean>,
+      };
+    }
+
+    if (!Array.isArray(parsed)) return fallback;
+
+    const store = parsed as GridPreferenceStore;
+    const vis = store.find((e) => e.key === "columnVisibilityModel")
+      ?.value as unknown;
+    const density = store.find((e) => e.key === "density")?.value as unknown;
+    const pageSize = store.find((e) => e.key === "pageSize")?.value as unknown;
+
+    return {
+      columnVisibilityModel:
+        vis && typeof vis === "object" && !Array.isArray(vis)
+          ? (vis as Record<string, boolean>)
+          : fallback.columnVisibilityModel,
+      density:
+        density === "compact" ||
+        density === "standard" ||
+        density === "comfortable"
+          ? (density as GridDensity)
+          : fallback.density,
+      pageSize: typeof pageSize === "number" ? pageSize : fallback.pageSize,
+    };
+  } catch {
+    return fallback;
+  }
+}
+
+function writeGridPreferences(prefs: {
+  columnVisibilityModel: Record<string, boolean>;
+  density: GridDensity;
+  pageSize: number;
+}) {
+  const store: GridPreferenceStore = [
+    { key: "columnVisibilityModel", value: prefs.columnVisibilityModel },
+    { key: "density", value: prefs.density },
+    { key: "pageSize", value: prefs.pageSize },
+  ];
+
+  try {
+    localStorage.setItem(COLUMN_VISIBILITY_STORAGE_KEY, JSON.stringify(store));
+  } catch {}
+}
+
 const defaultColumnVisibility = {
   gid: true,
   namn: true,
-  schema: true,
+  schemaNamn: true,
   sakerhetsKlass: true,
   status: true,
   handlaggare: true,
-  arendeNummer: true,
+  arendeNummerOpenE: true,
   bestallareNamn: false,
   bestallareEpost: false,
-  skapadTidPunkt: true,
   beskrivning: false,
+  ursprung: false,
   syfte: false,
   dataKallaTyp: false,
-  datakalla: false,
   metod: false,
+  metodUrl: false,
   projekt: false,
   geografiskBegransning: false,
   uppdateringsFrekvens: false,
   fullstandighet: false,
   skalniva: false,
   nyckelOrd: false,
-  kategori: false,
+  kategori: true,
   tidsperiod: false,
   tidsperiodStartdatum: false,
   tidsperiodSlutdatum: false,
@@ -79,7 +154,7 @@ const defaultColumnVisibility = {
   anvandarBegransningLicensText: false,
   relateradeResurser: false,
   metaDataVersion: false,
-  sakerhetsKlassDokument: false,
+  kolumnBeskrivningUrl: false,
 };
 
 const ColumnsToolbarButton = React.forwardRef(function ColumnsToolbarButton(
@@ -303,7 +378,7 @@ function renderStringArray(value: unknown) {
   return value.filter(Boolean).join(", ");
 }
 
-export default function MetadataGrid() {
+export default function MetadataGrid({ mode }: { mode: "light" | "dark" }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -318,27 +393,32 @@ export default function MetadataGrid() {
     isRefetchError,
   } = useMetadata();
 
-  const [columnVisibilityModel, setColumnVisibilityModel] = React.useState(
-    () => {
-      try {
-        const saved = localStorage.getItem(COLUMN_VISIBILITY_STORAGE_KEY);
-        return saved ? JSON.parse(saved) : defaultColumnVisibility;
-      } catch {
-        return defaultColumnVisibility;
-      }
-    }
+  const [gridPrefs, setGridPrefs] = React.useState(() => readGridPreferences());
+  const { columnVisibilityModel, density, pageSize } = gridPrefs;
+
+  const setColumnVisibilityModel = React.useCallback(
+    (next: Record<string, boolean>) =>
+      setGridPrefs((p) => ({ ...p, columnVisibilityModel: next })),
+    []
   );
 
-  React.useEffect(() => {
-    try {
-      localStorage.setItem(
-        COLUMN_VISIBILITY_STORAGE_KEY,
-        JSON.stringify(columnVisibilityModel)
-      );
-    } catch {}
-  }, [columnVisibilityModel]);
+  const setDensity = React.useCallback(
+    (next: GridDensity) => setGridPrefs((p) => ({ ...p, density: next })),
+    []
+  );
 
-  const [density, setDensity] = React.useState<GridDensity>("standard");
+  const [paginationModel, setPaginationModel] =
+    React.useState<GridPaginationModel>(() => ({ page: 0, pageSize }));
+
+  React.useEffect(() => {
+    setPaginationModel((m) =>
+      m.pageSize === pageSize ? m : { ...m, pageSize }
+    );
+  }, [pageSize]);
+
+  React.useEffect(() => {
+    writeGridPreferences(gridPrefs);
+  }, [gridPrefs]);
 
   const [filterModel, setFilterModel] = React.useState<GridFilterModel>(() => ({
     items: [],
@@ -401,24 +481,25 @@ export default function MetadataGrid() {
     {
       field: "gid",
       headerName: "GID",
-      width: 90,
+      width: 80,
       renderCell: (params: GridRenderCellParams) => (
         <Box sx={{ pl: 2 }}>{params.value}</Box>
       ),
     },
-    { field: "namn", headerName: "Namn", minWidth: 220, flex: 1.2 },
-    { field: "schema", headerName: "Schema", minWidth: 180, flex: 1 },
+    // "namn" is often short in this dataset, so keep it compact.
+    { field: "namn", headerName: "Namn", minWidth: 110, flex: 0.4 },
+    { field: "schemaNamn", headerName: "Schema", minWidth: 140, flex: 0.7 },
     {
       field: "sakerhetsKlass",
       headerName: "Säkerhetsklass",
-      minWidth: 160,
-      flex: 0.9,
+      minWidth: 140,
+      flex: 0.5,
     },
     {
       field: "status",
       headerName: "Status",
-      minWidth: 140,
-      flex: 0.7,
+      minWidth: 110,
+      flex: 0.4,
       renderCell: (params: GridRenderCellParams) =>
         params.value ? (
           <Chip
@@ -434,37 +515,55 @@ export default function MetadataGrid() {
     {
       field: "handlaggare",
       headerName: "Handläggare",
-      minWidth: 160,
-      flex: 0.8,
+      minWidth: 170,
+      flex: 0.6,
     },
-    { field: "arendeNummer", headerName: "Ärendenummer", minWidth: 160 },
-    { field: "bestallareNamn", headerName: "Beställare", minWidth: 170 },
+    {
+      field: "arendeNummerOpenE",
+      headerName: "Ärendenummer",
+      minWidth: 150,
+      flex: 0.5,
+    },
+    {
+      field: "bestallareNamn",
+      headerName: "Beställare",
+      minWidth: 170,
+      flex: 0.6,
+    },
     {
       field: "bestallareEpost",
       headerName: "Beställare e-post",
       minWidth: 220,
+      flex: 0.9,
     },
-    { field: "skapadTidPunkt", headerName: "Skapad", minWidth: 220 },
     {
       field: "beskrivning",
       headerName: "Beskrivning",
-      minWidth: 260,
-      flex: 1.2,
+      minWidth: 320,
+      flex: 1.6,
     },
-    { field: "syfte", headerName: "Syfte", minWidth: 260, flex: 1.2 },
-    { field: "dataKallaTyp", headerName: "Datakälla typ", minWidth: 190 },
+    { field: "syfte", headerName: "Syfte", minWidth: 300, flex: 1.5 },
     {
-      field: "datakalla",
-      headerName: "Datakälla",
-      minWidth: 200,
-      valueGetter: (_value, row) => renderStringArray(row.datakalla),
+      field: "dataKallaTyp",
+      headerName: "Datakälla typ",
+      minWidth: 160,
+      flex: 0.6,
     },
-    { field: "metod", headerName: "Metod", minWidth: 150 },
-    { field: "projekt", headerName: "Projekt", minWidth: 120 },
+    {
+      field: "ursprung",
+      headerName: "Ursprung",
+      minWidth: 200,
+      flex: 0.9,
+      valueGetter: (_value, row) => renderStringArray(row.ursprung),
+    },
+    { field: "metod", headerName: "Metod", minWidth: 140, flex: 0.5 },
+    { field: "metodUrl", headerName: "Metod URL", minWidth: 240, flex: 1.1 },
+    { field: "projekt", headerName: "Projekt", width: 120 },
     {
       field: "geografiskBegransning",
       headerName: "Geografisk begränsning",
       minWidth: 240,
+      flex: 1.2,
       valueGetter: (_value, row) =>
         renderStringArray(row.geografiskBegransning),
     },
@@ -472,45 +571,65 @@ export default function MetadataGrid() {
       field: "uppdateringsFrekvens",
       headerName: "Uppdateringsfrekvens",
       minWidth: 220,
+      flex: 0.7,
     },
-    { field: "fullstandighet", headerName: "Fullständighet", minWidth: 180 },
-    { field: "skalniva", headerName: "Skalnivå", minWidth: 120 },
+    {
+      field: "fullstandighet",
+      headerName: "Fullständighet",
+      minWidth: 160,
+      flex: 0.6,
+    },
+    { field: "skalniva", headerName: "Skalnivå", width: 120 },
     {
       field: "nyckelOrd",
       headerName: "Nyckelord",
       minWidth: 220,
+      flex: 0.9,
       valueGetter: (_value, row) => renderStringArray(row.nyckelOrd),
     },
-    { field: "kategori", headerName: "Kategori", minWidth: 170 },
+    { field: "kategori", headerName: "Kategori", minWidth: 140, flex: 0.5 },
     {
       field: "tidsperiod",
       headerName: "Tidsperiod",
       type: "boolean",
-      minWidth: 120,
+      width: 120,
     },
-    { field: "tidsperiodStartdatum", headerName: "Startdatum", minWidth: 140 },
-    { field: "tidsperiodSlutdatum", headerName: "Slutdatum", minWidth: 140 },
-    { field: "tidsUpplosning", headerName: "Tidsupplösning", minWidth: 160 },
-    { field: "skapelseDatum", headerName: "Skapelsedatum", minWidth: 150 },
+    { field: "tidsperiodStartdatum", headerName: "Startdatum", width: 130 },
+    { field: "tidsperiodSlutdatum", headerName: "Slutdatum", width: 130 },
+    {
+      field: "tidsUpplosning",
+      headerName: "Tidsupplösning",
+      minWidth: 150,
+      flex: 0.6,
+    },
+    { field: "skapelseDatum", headerName: "Skapelsedatum", width: 140 },
     {
       field: "anvandarBegransningLicens",
       headerName: "Licensbegränsning",
       type: "boolean",
       minWidth: 180,
+      flex: 0.6,
     },
     {
       field: "anvandarBegransningLicensText",
       headerName: "Licenstext",
       minWidth: 220,
+      flex: 1.1,
     },
     {
       field: "relateradeResurser",
       headerName: "Relaterade resurser",
       minWidth: 220,
+      flex: 0.9,
       valueGetter: (_value, row) => renderStringArray(row.relateradeResurser),
     },
-    { field: "metaDataVersion", headerName: "Version", minWidth: 120 },
-    { field: "sakerhetsKlassDokument", headerName: "Dokument", minWidth: 200 },
+    { field: "metaDataVersion", headerName: "Version", width: 110 },
+    {
+      field: "kolumnBeskrivningUrl",
+      headerName: "Kolumnbeskrivning URL",
+      minWidth: 240,
+      flex: 1.2,
+    },
   ];
 
   const filteredItems = selectedKategori
@@ -522,7 +641,7 @@ export default function MetadataGrid() {
   const rows = filteredItems.map((item) => ({ ...item, id: item.gid }));
 
   return (
-    <Container maxWidth="xl" sx={{ mt: { xs: 1, md: 4 } }}>
+    <Container maxWidth="xl" sx={{ mt: { xs: 1, md: 4 }, mb: 6 }}>
       <Box
         mb={2}
         sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}
@@ -536,7 +655,8 @@ export default function MetadataGrid() {
           Tillbaka
         </Button>
         <Typography variant="body2" sx={{ fontWeight: 600, ml: "auto" }}>
-          Sök, filtrera, visa/dölj kolumner och exportera metadata.
+          Klicka på en rad för att se detaljer. Sök, filtrera, visa/dölj
+          kolumner, exportera tabellen till CSV.
         </Typography>
         {selectedKategori ? (
           <Chip
@@ -550,7 +670,7 @@ export default function MetadataGrid() {
       <Paper
         elevation={0}
         sx={{
-          height: { xs: 380, md: 520, lg: 650, xl: 700 },
+          height: { xs: 300, md: 450, lg: 500, xl: 700 },
           width: "100%",
           borderRadius: 3,
           border: "1px solid",
@@ -576,9 +696,15 @@ export default function MetadataGrid() {
           }
           pageSizeOptions={[10, 25, 50]}
           pagination
+          paginationModel={paginationModel}
+          onPaginationModelChange={(m) => {
+            setPaginationModel(m);
+            setGridPrefs((p) =>
+              p.pageSize === m.pageSize ? p : { ...p, pageSize: m.pageSize }
+            );
+          }}
           density={density}
           initialState={{
-            pagination: { paginationModel: { pageSize: 10, page: 0 } },
             sorting: { sortModel: [{ field: "gid", sort: "asc" }] },
           }}
           showToolbar
@@ -602,8 +728,7 @@ export default function MetadataGrid() {
             '& .MuiDataGrid-columnHeader[data-field="gid"] .MuiDataGrid-columnHeaderTitleContainer':
               { pl: 1 },
             "& .MuiDataGrid-columnSeparator": {
-              display: "block",
-              color: "divider",
+              color: mode === "light" ? "grey" : "white",
             },
             "& .MuiDataGrid-cell": {
               borderBottom: "1px dotted",

@@ -12,6 +12,7 @@ import {
   MenuItem,
   ListItemText,
   keyframes,
+  Button,
 } from "@mui/material";
 import {
   DataGrid,
@@ -27,6 +28,7 @@ import {
   ExportCsv,
   ExportPrint,
   type GridDensity,
+  type GridPaginationModel,
 } from "@mui/x-data-grid";
 import { useNavigate } from "react-router-dom";
 
@@ -36,21 +38,123 @@ import FilterAltOutlinedIcon from "@mui/icons-material/FilterAltOutlined";
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 import DensityMediumOutlinedIcon from "@mui/icons-material/DensityMediumOutlined";
 import CancelIcon from "@mui/icons-material/Cancel";
+import ArrowBackOutlinedIcon from "@mui/icons-material/ArrowBackOutlined";
 
 import { useManagementPlan } from "../../hooks/useManagementPlan";
 import type { ManagementPlan } from "../../types/management-plan";
 
 const COLUMN_VISIBILITY_STORAGE_KEY = "managementplan-column-visibility";
 
+type GridPreferenceEntry =
+  | { key: "columnVisibilityModel"; value: Record<string, boolean> }
+  | { key: "density"; value: GridDensity }
+  | { key: "pageSize"; value: number };
+
+type GridPreferenceStore = GridPreferenceEntry[];
+
+function readGridPreferences(): {
+  columnVisibilityModel: Record<string, boolean>;
+  density: GridDensity;
+  pageSize: number;
+} {
+  const fallback = {
+    columnVisibilityModel: defaultColumnVisibility,
+    density: "standard" as GridDensity,
+    pageSize: 10,
+  };
+
+  try {
+    const raw = localStorage.getItem(COLUMN_VISIBILITY_STORAGE_KEY);
+    if (!raw) return fallback;
+
+    const parsed: unknown = JSON.parse(raw);
+
+    // Back-compat: older versions stored just the visibility object.
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      return {
+        ...fallback,
+        columnVisibilityModel: parsed as Record<string, boolean>,
+      };
+    }
+
+    if (!Array.isArray(parsed)) return fallback;
+
+    const store = parsed as GridPreferenceStore;
+    const vis = store.find((e) => e.key === "columnVisibilityModel")
+      ?.value as unknown;
+    const density = store.find((e) => e.key === "density")?.value as unknown;
+    const pageSize = store.find((e) => e.key === "pageSize")?.value as unknown;
+
+    return {
+      columnVisibilityModel:
+        vis && typeof vis === "object" && !Array.isArray(vis)
+          ? (vis as Record<string, boolean>)
+          : fallback.columnVisibilityModel,
+      density:
+        density === "compact" ||
+        density === "standard" ||
+        density === "comfortable"
+          ? (density as GridDensity)
+          : fallback.density,
+      pageSize: typeof pageSize === "number" ? pageSize : fallback.pageSize,
+    };
+  } catch {
+    return fallback;
+  }
+}
+
+function writeGridPreferences(prefs: {
+  columnVisibilityModel: Record<string, boolean>;
+  density: GridDensity;
+  pageSize: number;
+}) {
+  const store: GridPreferenceStore = [
+    { key: "columnVisibilityModel", value: prefs.columnVisibilityModel },
+    { key: "density", value: prefs.density },
+    { key: "pageSize", value: prefs.pageSize },
+  ];
+
+  try {
+    localStorage.setItem(COLUMN_VISIBILITY_STORAGE_KEY, JSON.stringify(store));
+  } catch {}
+}
+
+function formatDateOnly(value: unknown): string {
+  if (value === null || value === undefined) return "-";
+
+  if (typeof value === "string") {
+    const v = value.trim();
+    const m = v.match(/^(\d{4}-\d{2}-\d{2})/);
+    if (m) return m[1];
+    const d = new Date(v);
+    return Number.isNaN(d.getTime()) ? v : d.toISOString().slice(0, 10);
+  }
+
+  if (typeof value === "number") {
+    const d = new Date(value);
+    return Number.isNaN(d.getTime())
+      ? String(value)
+      : d.toISOString().slice(0, 10);
+  }
+
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime())
+      ? String(value)
+      : value.toISOString().slice(0, 10);
+  }
+
+  return String(value);
+}
+
 const defaultColumnVisibility = {
   gid: true,
   namn: true,
   titel: true,
-  schema: true,
+  schemaNamn: true,
   sakerhetsklass: true,
   status: true,
   handlaggare: true,
-  arendeNummer: true,
+  arendeNummberOpenE: true,
   skapadTidPunkt: true,
   bestallareNamn: false,
   bestallareEpost: false,
@@ -60,12 +164,20 @@ const defaultColumnVisibility = {
   dataAdministrator: false,
   dataKonsument: false,
   redigeringsKalla: false,
-  publicering: false,
+  publicerad: false,
   oppnaData: false,
+  dokumentSkUrl: false,
+  dokuementInfoUrl: false,
+  ovrigInformation: false,
+  kritiskDatamangd: false,
   arkivering: false,
   arkiveringTidpunkt: false,
   atkomst: false,
+  integration: false,
   forvaltningsplanVersion: false,
+  skapadAv: false,
+  andradTidPunkt: false,
+  andradAv: false,
 };
 
 const ColumnsToolbarButton = React.forwardRef(function ColumnsToolbarButton(
@@ -276,7 +388,11 @@ function ManagementPlanToolbar({
   );
 }
 
-export default function ManagementPlanGrid() {
+export default function ManagementPlanGrid({
+  mode,
+}: {
+  mode: "light" | "dark";
+}) {
   const navigate = useNavigate();
   const {
     data: items = [],
@@ -290,32 +406,71 @@ export default function ManagementPlanGrid() {
     {
       field: "gid",
       headerName: "GID",
-      width: 90,
+      width: 80,
       renderCell: (params: GridRenderCellParams) => (
         <Box sx={{ pl: 2 }}>{params.value}</Box>
       ),
     },
-    { field: "namn", headerName: "Namn", minWidth: 220, flex: 1.2 },
-    { field: "titel", headerName: "Titel", minWidth: 200, flex: 1 },
-    { field: "schema", headerName: "Schema", minWidth: 160, flex: 0.8 },
-    { field: "sakerhetsklass", headerName: "Säkerhetsklass", minWidth: 160 },
-    { field: "status", headerName: "Status", minWidth: 140 },
-    { field: "handlaggare", headerName: "Handläggare", minWidth: 160 },
-    { field: "arendeNummer", headerName: "Ärendenummer", minWidth: 160 },
-    { field: "skapadTidPunkt", headerName: "Skapad", minWidth: 220 },
-    { field: "bestallareNamn", headerName: "Beställare", minWidth: 170 },
+    {
+      field: "arendeNummberOpenE",
+      headerName: "Ärendenummer OpenE",
+      minWidth: 170,
+      flex: 0.8,
+    },
+    // Most datasets have short "namn" values, so keep it compact.
+    { field: "namn", headerName: "Namn", minWidth: 140, flex: 0.6 },
+    { field: "titel", headerName: "Titel", minWidth: 140, flex: 0.6 },
+    { field: "schemaNamn", headerName: "Schema", minWidth: 140, flex: 0.7 },
+    {
+      field: "sakerhetsklass",
+      headerName: "Säkerhetsklass",
+      minWidth: 140,
+      flex: 0.5,
+    },
+    { field: "status", headerName: "Status", minWidth: 120, flex: 0.6 },
+    {
+      field: "handlaggare",
+      headerName: "Handläggare",
+      minWidth: 160,
+      flex: 0.6,
+    },
+    {
+      field: "skapadTidPunkt",
+      headerName: "Skapad",
+      minWidth: 120,
+      flex: 0.6,
+      valueFormatter: (value) => formatDateOnly(value),
+    },
+    {
+      field: "bestallareNamn",
+      headerName: "Beställare",
+      minWidth: 160,
+      flex: 0.8,
+    },
     {
       field: "bestallareEpost",
       headerName: "Beställare e-post",
-      minWidth: 220,
+      minWidth: 160,
+      flex: 0.9,
     },
-    { field: "datakallaTyp", headerName: "Datakälla typ", minWidth: 190 },
-    { field: "dataAgare", headerName: "Dataägare", minWidth: 170 },
-    { field: "dataForvaltare", headerName: "Dataförvaltare", minWidth: 170 },
+    {
+      field: "datakallaTyp",
+      headerName: "Datakälla typ",
+      minWidth: 160,
+      flex: 0.6,
+    },
+    { field: "dataAgare", headerName: "Dataägare", minWidth: 160, flex: 0.6 },
+    {
+      field: "dataForvaltare",
+      headerName: "Dataförvaltare",
+      minWidth: 160,
+      flex: 0.6,
+    },
     {
       field: "dataAdministrator",
       headerName: "Dataadministratör",
-      minWidth: 220,
+      minWidth: 160,
+      flex: 0.9,
       valueGetter: (_value, row) =>
         Array.isArray(row.dataAdministrator)
           ? row.dataAdministrator.filter(Boolean).join(", ")
@@ -324,7 +479,8 @@ export default function ManagementPlanGrid() {
     {
       field: "dataKonsument",
       headerName: "Datakonsument",
-      minWidth: 220,
+      minWidth: 160,
+      flex: 0.9,
       valueGetter: (_value, row) =>
         Array.isArray(row.dataKonsument)
           ? row.dataKonsument.filter(Boolean).join(", ")
@@ -333,60 +489,106 @@ export default function ManagementPlanGrid() {
     {
       field: "redigeringsKalla",
       headerName: "Redigeringskälla",
-      minWidth: 220,
+      minWidth: 160,
+      flex: 0.9,
       valueGetter: (_value, row) =>
         Array.isArray(row.redigeringsKalla)
           ? row.redigeringsKalla.filter(Boolean).join(", ")
           : "",
     },
-    { field: "publicering", headerName: "Publicering", minWidth: 170 },
+    {
+      field: "publicerad",
+      headerName: "Publicerad",
+      minWidth: 160,
+      flex: 0.7,
+      valueGetter: (_value, row) =>
+        Array.isArray(row.publicerad)
+          ? row.publicerad.filter(Boolean).join(", ")
+          : "",
+    },
     {
       field: "oppnaData",
       headerName: "Öppna data",
       type: "boolean",
-      minWidth: 140,
+      width: 120,
     },
-    { field: "arkivering", headerName: "Arkivering", minWidth: 170 },
+    {
+      field: "dokumentSkUrl",
+      headerName: "Dokument SK URL",
+      minWidth: 160,
+      flex: 0.8,
+    },
+    {
+      field: "dokuementInfoUrl",
+      headerName: "Dokument info URL",
+      minWidth: 160,
+      flex: 0.8,
+    },
+    {
+      field: "kritiskDatamangd",
+      headerName: "Kritisk datamängd",
+      type: "boolean",
+      minWidth: 170,
+      flex: 0.6,
+    },
+    { field: "arkivering", headerName: "Arkivering", minWidth: 150, flex: 0.6 },
     {
       field: "arkiveringTidpunkt",
       headerName: "Arkivering tidpunkt",
-      minWidth: 200,
+      minWidth: 170,
+      flex: 0.6,
     },
     {
       field: "atkomst",
       headerName: "Åtkomst",
-      minWidth: 220,
+      minWidth: 140,
+      flex: 0.6,
       valueGetter: (_value, row) =>
         Array.isArray(row.atkomst)
           ? row.atkomst.filter(Boolean).join(", ")
           : "",
     },
-    { field: "forvaltningsplanVersion", headerName: "Version", minWidth: 120 },
+    {
+      field: "integration",
+      headerName: "Integration",
+      minWidth: 160,
+      flex: 0.9,
+      valueGetter: (_value, row) =>
+        Array.isArray(row.integration)
+          ? row.integration.filter(Boolean).join(", ")
+          : "",
+    },
+    { field: "forvaltningsplanVersion", headerName: "Version", width: 110 },
   ];
 
   const rows = items.map((item) => ({ ...item, id: item.gid }));
 
-  const [columnVisibilityModel, setColumnVisibilityModel] = React.useState(
-    () => {
-      try {
-        const saved = localStorage.getItem(COLUMN_VISIBILITY_STORAGE_KEY);
-        return saved ? JSON.parse(saved) : defaultColumnVisibility;
-      } catch {
-        return defaultColumnVisibility;
-      }
-    }
+  const [gridPrefs, setGridPrefs] = React.useState(() => readGridPreferences());
+  const { columnVisibilityModel, density, pageSize } = gridPrefs;
+
+  const setColumnVisibilityModel = React.useCallback(
+    (next: Record<string, boolean>) =>
+      setGridPrefs((p) => ({ ...p, columnVisibilityModel: next })),
+    []
   );
 
-  React.useEffect(() => {
-    try {
-      localStorage.setItem(
-        COLUMN_VISIBILITY_STORAGE_KEY,
-        JSON.stringify(columnVisibilityModel)
-      );
-    } catch {}
-  }, [columnVisibilityModel]);
+  const setDensity = React.useCallback(
+    (next: GridDensity) => setGridPrefs((p) => ({ ...p, density: next })),
+    []
+  );
 
-  const [density, setDensity] = React.useState<GridDensity>("standard");
+  const [paginationModel, setPaginationModel] =
+    React.useState<GridPaginationModel>(() => ({ page: 0, pageSize }));
+
+  React.useEffect(() => {
+    setPaginationModel((m) =>
+      m.pageSize === pageSize ? m : { ...m, pageSize }
+    );
+  }, [pageSize]);
+
+  React.useEffect(() => {
+    writeGridPreferences(gridPrefs);
+  }, [gridPrefs]);
 
   if (isLoading) {
     return (
@@ -440,17 +642,38 @@ export default function ManagementPlanGrid() {
   }
 
   return (
-    <Container maxWidth="xl" sx={{ mt: { xs: 1, md: 3 }, mb: 6 }}>
-      <Box mb={2}>
-        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-          Förvaltningsplan
+    <Container maxWidth="xl" sx={{ mt: { xs: 1, md: 4 }, mb: 6 }}>
+      <Box
+        mb={2}
+        sx={{
+          display: "grid",
+          gridTemplateColumns: "auto 1fr auto",
+          alignItems: "center",
+          gap: 1,
+        }}
+      >
+        <Button
+          variant="text"
+          startIcon={<ArrowBackOutlinedIcon />}
+          onClick={() => navigate("/")}
+          sx={{ textTransform: "capitalize" }}
+        >
+          Tillbaka
+        </Button>
+        <Typography
+          variant="body2"
+          sx={{ fontWeight: 600, textAlign: "center" }}
+        >
+          Klicka på en rad för att se detaljer. Sök, filtrera, visa/dölj
+          kolumner, exportera tabellen till CSV.
         </Typography>
+        <Box sx={{ width: 110 }} />
       </Box>
 
       <Paper
         elevation={0}
         sx={{
-          height: { xs: 380, md: 520, lg: 650, xl: 700 },
+          height: { xs: 300, md: 450, lg: 500, xl: 700 },
           width: "100%",
           borderRadius: 3,
           border: "1px solid",
@@ -470,9 +693,15 @@ export default function ManagementPlanGrid() {
           onRowClick={(params) => navigate(`/managementplan/${params.row.gid}`)}
           pageSizeOptions={[10, 25, 50]}
           pagination
+          paginationModel={paginationModel}
+          onPaginationModelChange={(m) => {
+            setPaginationModel(m);
+            setGridPrefs((p) =>
+              p.pageSize === m.pageSize ? p : { ...p, pageSize: m.pageSize }
+            );
+          }}
           density={density}
           initialState={{
-            pagination: { paginationModel: { pageSize: 10, page: 0 } },
             sorting: { sortModel: [{ field: "gid", sort: "asc" }] },
           }}
           showToolbar
@@ -495,6 +724,9 @@ export default function ManagementPlanGrid() {
             "& .MuiDataGrid-columnHeaderTitle": { fontWeight: 600 },
             '& .MuiDataGrid-columnHeader[data-field="gid"] .MuiDataGrid-columnHeaderTitleContainer':
               { pl: 1 },
+            "& .MuiDataGrid-columnSeparator": {
+              color: mode === "light" ? "grey" : "white",
+            },
             "& .MuiDataGrid-cell": {
               borderBottom: "1px dotted",
               borderColor: "divider",

@@ -78,9 +78,12 @@ function App() {
             children: [
               { index: true, element: <Navigate to="/metadata" replace /> },
               { path: "metadata", element: <MetadataCatalog /> },
-              { path: "metadata/list", element: <MetadataGrid /> },
+              { path: "metadata/list", element: <MetadataGrid mode={mode} /> },
               { path: "metadata/:gid", element: <FormView kind="metadata" /> },
-              { path: "managementplan", element: <ManagementPlanGrid /> },
+              {
+                path: "managementplan",
+                element: <ManagementPlanGrid mode={mode} />,
+              },
               {
                 path: "managementplan/:gid",
                 element: <FormView kind="managementplan" />,

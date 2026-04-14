@@ -36,18 +36,18 @@ namespace metadata_forvaltningsplan_api.Data
             new Metadata
             {
                 Gid = 1,
-                SakerhetsKlassDokument = "sk-0-test.pdf",
-                ArendeNummer = "263521",
+                ArendeNummerOpenE = "263521",
                 BestallareNamn = "Testnamn",
                 BestallareEpost = "testnamn@test.com",
                 SakerhetsKlass = "sk0_test",
                 DataKallaTyp = "{Extern,organisation}",
-                Schema = "sk0_schema_test",
+                SchemaNamn = "sk0_schema_test",
                 Namn = "lekplatser_test_123",
                 Beskrivning = "Test beskrivning",
+                Ursprung = ["Extern", "organisation"],
                 Syfte = "Att identifiera alla lekplatser och ta en kopp kaffe",
-                Datakalla = ["Extern","organisation"],
                 Metod = "Fjärranalys",
+                MetodUrl = "https://example.com/metod",
                 Projekt = "Nej",
                 GeografiskBegransning = ["tätort","test"],
                 UppdateringsFrekvens = "Årligen",
@@ -63,26 +63,26 @@ namespace metadata_forvaltningsplan_api.Data
                 AnvandarBegransningLicens = false,
                 AnvandarBegransningLicensText = "Test",
                 RelateradeResurser = ["Nej"],
+                KolumnBeskrivningUrl = "https://example.com/kolumner",
                 Status = "granskas",
                 Handlaggare = "Jag",
-                MetaDataVersion = "1.0",
-                SkapadTidPunkt = DateTimeOffset.Parse("2026-02-14T15:00:05.462671+01:00")
+                MetaDataVersion = "1.0"
             },
             new Metadata
             {
                 Gid = 2,
-                SakerhetsKlassDokument = "sk-0-test.pdf",
-                ArendeNummer = "2026BM132",
+                ArendeNummerOpenE = "2026BM132",
                 BestallareNamn = "Testnamn2",
                 BestallareEpost = "testnamn2@test.com",
                 SakerhetsKlass = "sk0_test",
                 DataKallaTyp = "{Extern,organisation}",
-                Schema = "sk0_schema_test",
+                SchemaNamn = "sk0_schema_test",
                 Namn = "lekplatser_test_123",
                 Beskrivning = "Test beskrivning",
+                Ursprung = ["Extern", "organisation"],
                 Syfte = "Att identifiera alla lekplatser och ta en kopp kaffe",
-                Datakalla = ["Extern","organisation"],
                 Metod = "Fjärranalys",
+                MetodUrl = "https://example.com/metod",
                 Projekt = "Nej",
                 GeografiskBegransning = ["tätort","test"],
                 UppdateringsFrekvens = "Årligen",
@@ -98,10 +98,10 @@ namespace metadata_forvaltningsplan_api.Data
                 AnvandarBegransningLicens = false,
                 AnvandarBegransningLicensText = "Test",
                 RelateradeResurser = ["Nej"],
+                KolumnBeskrivningUrl = "https://example.com/kolumner",
                 Status = "granskas",
                 Handlaggare = "Jag",
-                MetaDataVersion = "1.0",
-                SkapadTidPunkt = DateTimeOffset.Parse("2026-02-14T15:00:05.462671+01:00")
+                MetaDataVersion = "1.0"
             }
         };
 

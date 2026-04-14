@@ -36,12 +36,12 @@ namespace metadata_forvaltningsplan_api.Data
                 new ManagementPlan
                 {
                     Gid = 1,
-                    ArendeNummer = "263521",
+                    ArendeNummberOpenE = "263521",
                     BestallareNamn = "Testnamn",
                     BestallareEpost = "testnamn@test.com",
                     Sakerhetsklass = "sk0_test",
                     DatakallaTyp = "{Extern,organisation}",
-                    Schema = "sk0_schema_test",
+                    SchemaNamn = "sk0_schema_test",
                     Namn = "lekplatser_test_123",
                     Titel = "lekplatser_test_123",
                     DataAgare = "Testnamn",
@@ -49,15 +49,24 @@ namespace metadata_forvaltningsplan_api.Data
                     DataAdministrator = ["Jag"],
                     DataKonsument = ["organisation"],
                     RedigeringsKalla = ["Extern", "organisation"],
-                    Publicering = "Nej",
                     OppnaData = false,
+                    DokumentSkUrl = "sk-0-test.pdf",
+                    DokuementInfoUrl = "https://example.com/info",
+                    OvrigInformation = "Test",
+                    KritiskDatamangd = false,
                     Arkivering = "Nej",
                     ArkiveringTidpunkt = "Ej planerad",
+                    Publicerad = ["Nej"],
+                    PubliceradOppnaData = false,
                     Atkomst = ["Intern"],
+                    Integration = ["Nej"],
                     Status = "granskas",
                     Handlaggare = "Jag",
                     ForvaltningsplanVersion = "1.0",
-                    SkapadTidPunkt = DateTimeOffset.Parse("2026-02-14T15:00:05.462671+01:00")
+                    SkapadTidPunkt = DateTimeOffset.Parse("2026-02-14T15:00:05.462671+01:00"),
+                    SkapadAv = "system",
+                    AndradTidPunkt = DateTimeOffset.Parse("2026-02-14T15:00:05.462671+01:00"),
+                    AndradAv = "system"
                 }
             };
 

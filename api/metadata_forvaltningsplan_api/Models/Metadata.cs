@@ -3,18 +3,18 @@
     public class Metadata
     {
         public int Gid { get; set; }
-        public string? SakerhetsKlassDokument { get; set; }
-        public string? ArendeNummer { get; set; }
+        public string? ArendeNummerOpenE { get; set; }
         public string? BestallareNamn { get; set; }
         public string? BestallareEpost { get; set; }
         public string? SakerhetsKlass { get; set; }
         public string? DataKallaTyp { get; set; }
-        public string? Schema { get; set; }
+        public string? SchemaNamn { get; set; }
         public string? Namn { get; set; }
         public string? Beskrivning { get; set; }
+        public string[]? Ursprung {  get; set; }
         public string? Syfte { get; set; }
-        public string[]? Datakalla { get; set; }
         public string? Metod { get; set; }
+        public string? MetodUrl { get; set; }
         public string? Projekt { get; set; }
         public string[]? GeografiskBegransning { get; set; }
         public string? UppdateringsFrekvens { get; set; }
@@ -30,9 +30,9 @@
         public bool AnvandarBegransningLicens { get; set; }
         public string? AnvandarBegransningLicensText { get; set; }
         public string[]? RelateradeResurser { get; set; }
+        public string? KolumnBeskrivningUrl { get; set; }
         public string? Status { get; set; }
         public string? Handlaggare { get; set; }
         public string? MetaDataVersion { get; set; }
-        public DateTimeOffset SkapadTidPunkt { get; set; }
     }
 }
