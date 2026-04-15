@@ -10,6 +10,7 @@ import {
   CardContent,
   Alert,
   Chip,
+  CircularProgress,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
@@ -62,15 +63,88 @@ function metadataToSearchText(it: Metadata) {
   return parts.join(" ");
 }
 
+type ImageLoadState = "idle" | "loading" | "loaded" | "error";
+
+function usePreloadImages(urls: string[]) {
+  const [stateByUrl, setStateByUrl] = React.useState<Record<string, ImageLoadState>>(
+    {}
+  );
+
+  React.useEffect(() => {
+    if (urls.length === 0) return;
+
+    let cancelled = false;
+    const uniqueUrls = Array.from(new Set(urls.filter(Boolean)));
+
+    setStateByUrl((prev) => {
+      const next = { ...prev };
+      for (const u of uniqueUrls) {
+        if (!next[u]) next[u] = "idle";
+      }
+      return next;
+    });
+
+    for (const u of uniqueUrls) {
+      const img = new Image();
+
+      setStateByUrl((prev) => (prev[u] ? { ...prev, [u]: "loading" } : prev));
+
+      img.onload = () => {
+        if (cancelled) return;
+        setStateByUrl((prev) => ({ ...prev, [u]: "loaded" }));
+      };
+      img.onerror = () => {
+        if (cancelled) return;
+        setStateByUrl((prev) => ({ ...prev, [u]: "error" }));
+      };
+      img.src = u;
+    }
+
+    return () => {
+      cancelled = true;
+    };
+  }, [urls]);
+
+  const markLoaded = React.useCallback((url: string) => {
+    if (!url) return;
+    setStateByUrl((prev) => ({ ...prev, [url]: "loaded" }));
+  }, []);
+
+  const markError = React.useCallback((url: string) => {
+    if (!url) return;
+    setStateByUrl((prev) => ({ ...prev, [url]: "error" }));
+  }, []);
+
+  return { stateByUrl, markLoaded, markError };
+}
+
 export default function MetadataCatalog() {
   const navigate = useNavigate();
   const [query, setQuery] = React.useState("");
   const { data: items = [], isLoading, isError } = useMetadata();
   const config = useClientConfig();
   const defaultCategoryImgSrc = React.useMemo(
-    () => publicAssetUrl(config.defaultCategoryImage || "kompass.jpg"),
+    () => publicAssetUrl(config.defaultCategoryImage || ""),
     [config.defaultCategoryImage]
   );
+
+  const categoryImgSrc = React.useCallback(
+    (categoryTitle: string) => {
+      return config.categoryImages?.[categoryTitle]
+        ? publicAssetUrl(config.categoryImages[categoryTitle])
+        : defaultCategoryImgSrc;
+    },
+    [config.categoryImages, defaultCategoryImgSrc]
+  );
+
+  const allCategoryImageUrls = React.useMemo(() => {
+    const urls: string[] = [defaultCategoryImgSrc];
+    for (const c of CATEGORIES) urls.push(categoryImgSrc(c.title));
+    return urls;
+  }, [categoryImgSrc, defaultCategoryImgSrc]);
+
+  const { stateByUrl, markLoaded, markError } =
+    usePreloadImages(allCategoryImageUrls);
 
   const countsByKategori = React.useMemo(() => {
     const map = new Map<string, number>();
@@ -143,7 +217,7 @@ export default function MetadataCatalog() {
 
       <Grid container spacing={4}>
         {filtered.map((c) => (
-          // Config is keyed by title: config.categoryImages?.["Administrativa gränser"] = "kompass.jpg"
+          // Config is keyed by title: config.categoryImages?.["Administrativa gränser"] = "kompass.png"
           <Grid key={c.title} size={{ xs: 12, sm: 6, md: 3 }}>
             <Card
               variant="outlined"
@@ -183,28 +257,47 @@ export default function MetadataCatalog() {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
+                    position: "relative",
                     bgcolor: "background.default",
                     borderBottom: "1px solid",
                     borderColor: "divider",
                     flexShrink: 0,
                   }}
                 >
-                  <Box
-                    component="img"
-                    src={
-                      config.categoryImages?.[c.title]
-                        ? publicAssetUrl(config.categoryImages[c.title])
-                        : defaultCategoryImgSrc
-                    }
-                    alt={c.title}
-                    sx={{
-                      // Fill the header area consistently (may crop edges).
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "cover",
-                      objectPosition: "center",
-                    }}
-                  />
+                  {(() => {
+                    const src = categoryImgSrc(c.title);
+                    const state = stateByUrl[src] ?? "idle";
+                    const showSpinner = state !== "loaded" && state !== "error";
+
+                    return (
+                      <>
+                        {showSpinner ? (
+                          <CircularProgress
+                            size={32}
+                            sx={{ position: "absolute" }}
+                            aria-label="Laddar bild"
+                          />
+                        ) : null}
+                        <Box
+                          component="img"
+                          src={src}
+                          alt={c.title}
+                          loading="eager"
+                          onLoad={() => markLoaded(src)}
+                          onError={() => markError(src)}
+                          sx={{
+                            // Fill the header area consistently (may crop edges).
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                            objectPosition: "center",
+                            opacity: state === "loaded" ? 1 : 0,
+                            transition: "opacity 160ms ease",
+                          }}
+                        />
+                      </>
+                    );
+                  })()}
                 </Box>
                 <CardContent sx={{ py: 1.5, width: "100%", flexGrow: 1 }}>
                   <Typography

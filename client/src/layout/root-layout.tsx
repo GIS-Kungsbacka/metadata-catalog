@@ -302,13 +302,6 @@ export function RootLayout({ mode, onToggleMode }: RootLayoutProps) {
                 >
                   {initials}
                 </Avatar>
-                <Typography
-                  variant="body2"
-                  sx={{ fontWeight: 650, maxWidth: 220 }}
-                  noWrap
-                >
-                  {username}
-                </Typography>
               </Stack>
             </Stack>
           </Box>

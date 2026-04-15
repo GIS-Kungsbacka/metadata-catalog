@@ -18,7 +18,7 @@ import {
 import { ArrowBack, Download } from "@mui/icons-material";
 import jsPDF from "jspdf";
 import { useMetadataById } from "../hooks/useMetadata";
-import { useManagementPlanById } from "../hooks/useManagementPlan";
+import { useManagementPlan, useManagementPlanById } from "../hooks/useManagementPlan";
 import type { Metadata } from "../types/metadata";
 import type { ManagementPlan } from "../types/management-plan";
 import { statusChipColor } from "../utils/status-chip";
@@ -205,8 +205,15 @@ export default function FormView({
   const numericGid = Number(gid);
   const gidIsValid = Number.isFinite(numericGid) && numericGid > 0;
 
-  const metadataQuery = useMetadataById(numericGid);
-  const managementPlanQuery = useManagementPlanById(numericGid);
+  const metadataQuery = useMetadataById(numericGid, {
+    enabled: gidIsValid && kind === "metadata",
+  });
+  const managementPlanQuery = useManagementPlanById(numericGid, {
+    enabled: gidIsValid && kind === "managementplan",
+  });
+  const managementPlansQuery = useManagementPlan({
+    enabled: gidIsValid && kind === "metadata",
+  });
 
   const query = kind === "metadata" ? metadataQuery : managementPlanQuery;
   const item = query.data as Metadata | ManagementPlan | undefined;
@@ -221,9 +228,8 @@ export default function FormView({
       ? ((location.state as any).backTo as string)
       : undefined;
 
-  const backTo =
-    backToFromState ??
-    (kind === "metadata" ? "/metadata/list" : "/managementplan");
+  const baseBackTo = kind === "metadata" ? "/metadata/list" : "/managementplan";
+  const backTo = backToFromState ?? baseBackTo;
   const heading = kind === "metadata" ? "Metadata" : "Förvaltningsplan";
 
   if (isLoading) {
@@ -298,6 +304,17 @@ export default function FormView({
     );
   }
 
+  const backToFinal =
+    backToFromState ??
+    (kind === "metadata"
+      ? (() => {
+          const kategori = ((item as Metadata).kategori ?? "").trim();
+          return kategori
+            ? `/metadata/list?kategori=${encodeURIComponent(kategori)}`
+            : baseBackTo;
+        })()
+      : baseBackTo);
+
   const displayKeys = Object.keys(fieldLabels) as (keyof typeof fieldLabels)[];
 
   const renderField = (key: string) => {
@@ -326,11 +343,31 @@ export default function FormView({
         (item as ManagementPlan).namn ||
         `Förvaltningsplan ${numericGid}`;
 
+  const managementPlanTitleByArende = (() => {
+    const map = new Map<string, string>();
+    for (const p of managementPlansQuery.data ?? []) {
+      const arende = (p.arendeNummberOpenE ?? "").trim();
+      if (!arende) continue;
+      const t = (p.titel ?? p.namn ?? "").trim();
+      if (!t) continue;
+      if (!map.has(arende)) map.set(arende, t);
+    }
+    return map;
+  })();
+
+  const derivedManagementPlanTitle =
+    kind === "metadata"
+      ? (() => {
+          const arende = ((item as Metadata).arendeNummerOpenE ?? "").trim();
+          return arende ? managementPlanTitleByArende.get(arende) : undefined;
+        })()
+      : undefined;
+
   return (
     <Container maxWidth="md">
       <Button
         startIcon={<ArrowBack />}
-        onClick={() => navigate(backTo)}
+        onClick={() => navigate(backToFinal)}
         sx={{ mb: 3, textTransform: "capitalize" }}
       >
         Tillbaka
@@ -345,14 +382,22 @@ export default function FormView({
               alignItems: "flex-start",
             }}
           >
-            <Typography
-              variant="h4"
-              component="h1"
-              gutterBottom
-              fontWeight={600}
-            >
-              {title}
-            </Typography>
+            <Box sx={{ minWidth: 0, pr: 2 }}>
+              <Typography
+                variant="h4"
+                component="h1"
+                gutterBottom
+                fontWeight={600}
+                sx={{ wordBreak: "break-word" }}
+              >
+                {title}
+              </Typography>
+              {derivedManagementPlanTitle ? (
+                <Typography variant="body2" color="text.secondary">
+                  Förvaltningsplan: {derivedManagementPlanTitle}
+                </Typography>
+              ) : null}
+            </Box>
             <Tooltip title="Ladda ner som PDF">
               <IconButton
                 onClick={() =>

@@ -11,7 +11,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   const appBase = env.VITE_APP_BASE || "/geodata";
   const clientAtRoot = env.VITE_CLIENT_AT_ROOT === "true";
-  const basePath = clientAtRoot ? `${appBase}/` : `${appBase}/`;
+  const basePath = clientAtRoot ? `${appBase}/` : `${appBase}/metadatakatalog/`;
 
   return {
     plugins: [react()],
@@ -27,6 +27,9 @@ export default defineConfig(({ mode }) => {
           //rewrite: (path) => path.replace(/^\/api/, ""),
         },
       },
+    },
+    build: {
+      chunkSizeWarningLimit: 2000,
     },
   };
 });

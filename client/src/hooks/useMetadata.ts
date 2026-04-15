@@ -2,6 +2,10 @@ import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { metadataRequests } from "../api/metadata-requests";
 import type { Metadata } from "../types/metadata";
 
+type Options = {
+  enabled?: boolean;
+};
+
 export const useMetadata = (): UseQueryResult<Metadata[]> => {
   return useQuery({
     queryKey: ["metadata"],
@@ -15,9 +19,13 @@ export const useMetadata = (): UseQueryResult<Metadata[]> => {
   });
 };
 
-export const useMetadataById = (gid: number): UseQueryResult<Metadata> => {
+export const useMetadataById = (
+  gid: number,
+  options?: Options
+): UseQueryResult<Metadata> => {
   return useQuery({
     queryKey: ["metadata", gid],
     queryFn: () => metadataRequests.getById(gid),
+    enabled: options?.enabled ?? true,
   });
 };

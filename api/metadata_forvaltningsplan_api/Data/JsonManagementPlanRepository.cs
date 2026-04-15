@@ -36,7 +36,7 @@ namespace metadata_forvaltningsplan_api.Data
                 new ManagementPlan
                 {
                     Gid = 1,
-                    ArendeNummberOpenE = "263521",
+                    ArendeNummberOpenE = "2026BM120",
                     BestallareNamn = "Testnamn",
                     BestallareEpost = "testnamn@test.com",
                     Sakerhetsklass = "sk0_test",

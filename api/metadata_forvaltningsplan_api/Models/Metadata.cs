@@ -27,7 +27,7 @@
         public DateOnly? TidsperiodSlutdatum { get; set; }
         public string? TidsUpplosning { get; set; }
         public DateOnly? SkapelseDatum { get; set; }
-        public bool AnvandarBegransningLicens { get; set; }
+        public bool? AnvandarBegransningLicens { get; set; }
         public string? AnvandarBegransningLicensText { get; set; }
         public string[]? RelateradeResurser { get; set; }
         public string? KolumnBeskrivningUrl { get; set; }

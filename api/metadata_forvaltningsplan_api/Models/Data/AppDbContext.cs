@@ -15,7 +15,7 @@ namespace metadata_forvaltningsplan_api.Models.Data
 
             // Configure Metadata entity
             modelBuilder.Entity<Metadata>()
-                .ToTable("etjanst_metadataklassifikation", "metadata")
+                .ToTable("etjanst_metadataspecifikation", "metadata")
                 .HasKey(x => x.Gid);
             modelBuilder.Entity<Metadata>()
                 .Property(x => x.Gid).HasColumnName("gid");

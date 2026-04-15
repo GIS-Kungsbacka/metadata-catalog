@@ -389,13 +389,18 @@ export default function MetadataGrid({ mode }: { mode: "light" | "dark" }) {
   } = useMetadata();
 
   const { data: managementPlans = [] } = useManagementPlan();
-  const planTitleByKey = React.useMemo(() => {
+  const planTitleByArende = React.useMemo(() => {
     const map = new Map<string, string>();
     for (const p of managementPlans) {
-      const schema = (p.schemaNamn ?? "").trim();
-      const namn = (p.namn ?? "").trim();
-      if (!schema && !namn) continue;
-      map.set(`${schema}||${namn}`, (p.titel ?? p.namn ?? "").trim());
+      const arende = (p.arendeNummberOpenE ?? "").trim();
+      if (!arende) continue;
+
+      const title = (p.titel ?? p.namn ?? "").trim();
+      if (!title) continue;
+
+      // If multiple plans share the same ärendenummer, keep the first
+      // non-empty title we see.
+      if (!map.has(arende)) map.set(arende, title);
     }
     return map;
   }, [managementPlans]);
@@ -507,9 +512,8 @@ export default function MetadataGrid({ mode }: { mode: "light" | "dark" }) {
       minWidth: 170,
       flex: 0.7,
       valueGetter: (_value, row) => {
-        const schema = (row.schemaNamn ?? "").trim();
-        const namn = (row.namn ?? "").trim();
-        return planTitleByKey.get(`${schema}||${namn}`) ?? "";
+        const arende = (row.arendeNummerOpenE ?? "").trim();
+        return arende ? (planTitleByArende.get(arende) ?? "") : "";
       },
     },
     { field: "schemaNamn", headerName: "Schema", minWidth: 140, flex: 0.7 },
