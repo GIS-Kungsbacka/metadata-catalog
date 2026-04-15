@@ -30,7 +30,7 @@ const CATEGORIES: Category[] = [
   { title: "Areella näringar" },
   { title: "Atmosfär, klimatologi och meteorologi" },
   { title: "Biologi och ekologi" },
-  { title: "Byggnader och byggnadsanläggningar" },
+  { title: "Byggnader och byggnadskonstruktioner" },
   { title: "Ekonomi" },
   { title: "Fastigheter och fysisk planering" },
   { title: "Försvar" },

@@ -21,6 +21,7 @@ import {
   type GridColDef,
   type GridRenderCellParams,
   type GridFilterModel,
+  type GridToolbarProps,
   Toolbar,
   ToolbarButton,
   ColumnsPanelTrigger,
@@ -173,13 +174,19 @@ const ColumnsToolbarButton = React.forwardRef(function ColumnsToolbarButton(
   );
 });
 
+type MetadataToolbarProps = GridToolbarProps & {
+  density?: GridDensity;
+  onDensityChange?: (d: GridDensity) => void;
+};
+
 function MetadataToolbar({
   density,
   onDensityChange,
-}: {
-  density: GridDensity;
-  onDensityChange: (d: GridDensity) => void;
-}) {
+  ...toolbarProps
+}: MetadataToolbarProps) {
+  const effectiveDensity = density ?? ("standard" as GridDensity);
+  const effectiveOnDensityChange = onDensityChange ?? (() => {});
+
   const [exportAnchor, setExportAnchor] = React.useState<null | HTMLElement>(
     null
   );
@@ -191,7 +198,7 @@ function MetadataToolbar({
   const densityOpen = Boolean(densityAnchor);
 
   return (
-    <Toolbar aria-label="Grid toolbar">
+    <Toolbar aria-label="Grid toolbar" {...toolbarProps}>
       <Box
         sx={{
           width: "100%",
@@ -224,9 +231,9 @@ function MetadataToolbar({
             (d) => (
               <MenuItem
                 key={d}
-                selected={density === d}
+                selected={effectiveDensity === d}
                 onClick={() => {
-                  onDensityChange(d);
+                  effectiveOnDensityChange(d);
                   setDensityAnchor(null);
                 }}
               >
@@ -731,13 +738,12 @@ export default function MetadataGrid({ mode }: { mode: "light" | "dark" }) {
           }}
           showToolbar
           slots={{
-            toolbar: (props) => (
-              <MetadataToolbar
-                {...props}
-                density={density}
-                onDensityChange={setDensity}
-              />
-            ),
+            toolbar: MetadataToolbar,
+          }}
+          slotProps={{
+            toolbar: { density, onDensityChange: setDensity } as unknown as Partial<
+              MetadataToolbarProps
+            >,
           }}
           sx={{
             border: 0,
