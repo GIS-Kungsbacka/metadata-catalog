@@ -708,7 +708,15 @@ export default function ManagementPlanGrid({
           columns={columns}
           checkboxSelection={false}
           disableRowSelectionOnClick
-          onRowClick={(params) => navigate(`/managementplan/${params.row.gid}`)}
+          onRowClick={(params) =>
+            navigate(
+              params.row.arendeNummberOpenE
+                ? `/managementplan/${encodeURIComponent(
+                    String(params.row.arendeNummberOpenE).trim()
+                  )}`
+                : `/managementplan`
+            )
+          }
           pageSizeOptions={[10, 25, 50]}
           pagination
           paginationModel={paginationModel}

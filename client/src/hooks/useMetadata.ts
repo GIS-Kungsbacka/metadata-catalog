@@ -6,10 +6,11 @@ type Options = {
   enabled?: boolean;
 };
 
-export const useMetadata = (): UseQueryResult<Metadata[]> => {
+export const useMetadata = (options?: Options): UseQueryResult<Metadata[]> => {
   return useQuery({
     queryKey: ["metadata"],
     queryFn: metadataRequests.getAll,
+    enabled: options?.enabled ?? true,
     retry: 3,
     retryDelay: 1000,
     refetchOnReconnect: true,

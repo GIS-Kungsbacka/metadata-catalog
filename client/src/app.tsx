@@ -58,13 +58,16 @@ function App() {
               { index: true, element: <Navigate to="/metadata" replace /> },
               { path: "metadata", element: <MetadataCatalog /> },
               { path: "metadata/list", element: <MetadataGrid mode={mode} /> },
-              { path: "metadata/:gid", element: <FormView kind="metadata" /> },
+              {
+                path: "metadata/:arendeNummerOpenE",
+                element: <FormView kind="metadata" />,
+              },
               {
                 path: "managementplan",
                 element: <ManagementPlanGrid mode={mode} />,
               },
               {
-                path: "managementplan/:gid",
+                path: "managementplan/:arendeNummberOpenE",
                 element: <FormView kind="managementplan" />,
               },
             ],

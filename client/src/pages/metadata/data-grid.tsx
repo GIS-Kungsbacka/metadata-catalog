@@ -520,7 +520,7 @@ export default function MetadataGrid({ mode }: { mode: "light" | "dark" }) {
       flex: 0.7,
       valueGetter: (_value, row) => {
         const arende = (row.arendeNummerOpenE ?? "").trim();
-        return arende ? (planTitleByArende.get(arende) ?? "") : "";
+        return arende ? planTitleByArende.get(arende) ?? "" : "";
       },
     },
     { field: "schemaNamn", headerName: "Schema", minWidth: 140, flex: 0.7 },
@@ -719,9 +719,16 @@ export default function MetadataGrid({ mode }: { mode: "light" | "dark" }) {
           checkboxSelection={false}
           disableRowSelectionOnClick
           onRowClick={(params) =>
-            navigate(`/metadata/${params.row.gid}`, {
-              state: { backTo: `/metadata/list${location.search}` },
-            })
+            navigate(
+              params.row.arendeNummerOpenE
+                ? `/metadata/${encodeURIComponent(
+                    String(params.row.arendeNummerOpenE).trim()
+                  )}`
+                : `/metadata`,
+              {
+                state: { backTo: `/metadata/list${location.search}` },
+              }
+            )
           }
           pageSizeOptions={[10, 25, 50]}
           pagination
@@ -741,9 +748,10 @@ export default function MetadataGrid({ mode }: { mode: "light" | "dark" }) {
             toolbar: MetadataToolbar,
           }}
           slotProps={{
-            toolbar: { density, onDensityChange: setDensity } as unknown as Partial<
-              MetadataToolbarProps
-            >,
+            toolbar: {
+              density,
+              onDensityChange: setDensity,
+            } as unknown as Partial<MetadataToolbarProps>,
           }}
           sx={{
             border: 0,

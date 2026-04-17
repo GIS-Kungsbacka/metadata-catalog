@@ -31,7 +31,7 @@ import { publicAssetUrl } from "../utils/public-asset-url";
 const DRAWER_OPEN_KEY = "app-drawer-open";
 const DRAWER_WIDTH_OPEN = 260;
 const DRAWER_WIDTH_CLOSED = 72;
-const SITE_LOADING_MS_OPTIONS = [2000, 2500, 3000, 3500, 4000] as const;
+const SITE_LOADING_MS_OPTIONS = [1500, 2000, 2500, 3000, 3500] as const;
 
 function pickSiteLoadingMs(): number {
   const idx = Math.floor(Math.random() * SITE_LOADING_MS_OPTIONS.length);
@@ -76,7 +76,7 @@ export function RootLayout({ mode, onToggleMode }: RootLayoutProps) {
 
   const drawerWidth = open ? DRAWER_WIDTH_OPEN : DRAWER_WIDTH_CLOSED;
   const username = user?.username ?? "";
-  const initials = getInitials(username) || "U";
+  const initials = getInitials(username) || "";
   const drawerLogoSrc = React.useMemo(() => {
     const fallback = mode === "light" ? "kbaLogo.png" : "kbaLogo_vit.png";
     const fromConfig =

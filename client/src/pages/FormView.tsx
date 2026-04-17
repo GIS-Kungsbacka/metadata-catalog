@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
   Box,
@@ -15,10 +16,11 @@ import {
   IconButton,
   Tooltip,
 } from "@mui/material";
-import { ArrowBack, Download } from "@mui/icons-material";
+import { ArrowBack, Download, Link } from "@mui/icons-material";
+import CheckCircleOutlineOutlinedIcon from "@mui/icons-material/CheckCircleOutlineOutlined";
 import jsPDF from "jspdf";
-import { useMetadataById } from "../hooks/useMetadata";
-import { useManagementPlan, useManagementPlanById } from "../hooks/useManagementPlan";
+import { useMetadata } from "../hooks/useMetadata";
+import { useManagementPlan } from "../hooks/useManagementPlan";
 import type { Metadata } from "../types/metadata";
 import type { ManagementPlan } from "../types/management-plan";
 import { statusChipColor } from "../utils/status-chip";
@@ -134,7 +136,10 @@ function formatValue(value: unknown, key?: string): string {
 function generatePDF(
   title: string,
   item: Record<string, unknown>,
-  fieldLabels: Record<string, string>
+  fieldLabels: Record<string, string>,
+  options?: {
+    subtitle?: string;
+  }
 ) {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -160,6 +165,11 @@ function generatePDF(
   // Title
   addText(title || "Detaljer", 18, true);
   yPosition += 5;
+
+  if (options?.subtitle) {
+    addText(options.subtitle, 12);
+    yPosition += 3;
+  }
 
   // Add chips info if available
   const chipsInfo: string[] = [];
@@ -198,27 +208,53 @@ export default function FormView({
 }: {
   kind: "metadata" | "managementplan";
 }) {
-  const { gid } = useParams<{ gid: string }>();
+  const { arendeNummerOpenE, arendeNummberOpenE } = useParams<{
+    arendeNummerOpenE?: string;
+    arendeNummberOpenE?: string;
+  }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const [linkCopied, setLinkCopied] = useState(false);
 
-  const numericGid = Number(gid);
-  const gidIsValid = Number.isFinite(numericGid) && numericGid > 0;
+  const arende =
+    kind === "metadata"
+      ? (arendeNummerOpenE ?? "").trim()
+      : (arendeNummberOpenE ?? "").trim();
+  const arendeIsValid = Boolean(arende);
 
-  const metadataQuery = useMetadataById(numericGid, {
-    enabled: gidIsValid && kind === "metadata",
+  const metadataListQuery = useMetadata({
+    enabled: arendeIsValid && kind === "metadata",
   });
-  const managementPlanQuery = useManagementPlanById(numericGid, {
-    enabled: gidIsValid && kind === "managementplan",
+  const managementPlanListQuery = useManagementPlan({
+    enabled: arendeIsValid && kind === "managementplan",
   });
   const managementPlansQuery = useManagementPlan({
-    enabled: gidIsValid && kind === "metadata",
+    enabled: kind === "metadata",
   });
 
-  const query = kind === "metadata" ? metadataQuery : managementPlanQuery;
-  const item = query.data as Metadata | ManagementPlan | undefined;
-  const isLoading = query.isLoading;
-  const error = query.error;
+  const listItem =
+    arendeIsValid && kind === "metadata"
+      ? (metadataListQuery.data ?? []).find(
+          (m) => (m.arendeNummerOpenE ?? "").trim() === arende
+        )
+      : arendeIsValid && kind === "managementplan"
+      ? (managementPlanListQuery.data ?? []).find(
+          (p) => (p.arendeNummberOpenE ?? "").trim() === arende
+        )
+      : undefined;
+
+  const item = arendeIsValid ? (listItem as any) : undefined;
+
+  const isLoading = arendeIsValid
+    ? kind === "metadata"
+      ? metadataListQuery.isLoading
+      : managementPlanListQuery.isLoading
+    : false;
+  const error = arendeIsValid
+    ? kind === "metadata"
+      ? metadataListQuery.error
+      : managementPlanListQuery.error
+    : undefined;
 
   const fieldLabels =
     kind === "metadata" ? metadataFieldLabels : managementPlanFieldLabels;
@@ -249,11 +285,11 @@ export default function FormView({
     );
   }
 
-  if (!gidIsValid) {
+  if (!arendeIsValid) {
     return (
       <Container maxWidth="md">
         <Box sx={{ mt: 4 }}>
-          <Alert severity="error">Ogiltigt id.</Alert>
+          <Alert severity="error">Ogiltigt ärendenummer.</Alert>
           <Button
             startIcon={<ArrowBack />}
             onClick={() => navigate(backTo)}
@@ -338,10 +374,10 @@ export default function FormView({
 
   const title =
     kind === "metadata"
-      ? (item as Metadata).namn || `Metadata ${numericGid}`
+      ? (item as Metadata).namn || `Metadata ${arende}`
       : (item as ManagementPlan).titel ||
         (item as ManagementPlan).namn ||
-        `Förvaltningsplan ${numericGid}`;
+        `Förvaltningsplan ${arende}`;
 
   const managementPlanTitleByArende = (() => {
     const map = new Map<string, string>();
@@ -398,21 +434,46 @@ export default function FormView({
                 </Typography>
               ) : null}
             </Box>
-            <Tooltip title="Ladda ner som PDF">
-              <IconButton
-                onClick={() =>
-                  generatePDF(
-                    title,
-                    item as unknown as Record<string, unknown>,
-                    fieldLabels as Record<string, string>
-                  )
-                }
-                color="primary"
-                sx={{ ml: 2 }}
+            <Box sx={{ display: "flex", alignItems: "center" }}>
+              <Tooltip
+                title={linkCopied ? "Länk kopierad" : "Kopiera länk"}
+                disableInteractive
               >
-                <Download />
-              </IconButton>
-            </Tooltip>
+                <IconButton
+                  onClick={async () => {
+                    const url = `${window.location.origin}/geodata/metadatakatalog${location.pathname}`;
+                    try {
+                      await navigator.clipboard.writeText(url);
+                      setLinkCopied(true);
+                      window.setTimeout(() => setLinkCopied(false), 3500);
+                    } catch {
+                      // ignore (clipboard might be blocked)
+                    }
+                  }}
+                  color={linkCopied ? "primary" : "primary"}
+                  sx={{ ml: 2 }}
+                >
+                  {linkCopied ? <CheckCircleOutlineOutlinedIcon /> : <Link />}
+                </IconButton>
+              </Tooltip>
+
+              <Tooltip title="Ladda ner som PDF">
+                <IconButton
+                  onClick={() =>
+                    generatePDF(title, item, fieldLabels, {
+                      subtitle:
+                        kind === "metadata" && derivedManagementPlanTitle
+                          ? `Förvaltningsplan: ${derivedManagementPlanTitle}`
+                          : undefined,
+                    })
+                  }
+                  color="primary"
+                  sx={{ ml: 1 }}
+                >
+                  <Download />
+                </IconButton>
+              </Tooltip>
+            </Box>
           </Box>
           <Stack
             direction="row"
