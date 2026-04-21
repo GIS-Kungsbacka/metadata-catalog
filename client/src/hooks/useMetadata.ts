@@ -1,7 +1,7 @@
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { metadataRequests } from "../api/metadata-requests";
 import type { Metadata } from "../types/metadata";
-import { metadataColumnDescRequests } from "../api/metadata-columnDesc-requests";
+import { metadataColumnDescRequests } from "../api/metadata-columndescription-requests";
 import type { MetadataColumnDescription } from "../types/metadata-columndescription";
 
 type Options = {
