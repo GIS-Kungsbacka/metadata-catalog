@@ -8,6 +8,7 @@ namespace metadata_forvaltningsplan_api.Models.Data
 
         public DbSet<Metadata> Metadatas => Set<Metadata>();
         public DbSet<ManagementPlan> ManagementPlans => Set<ManagementPlan>();
+        public DbSet<MetadataColumnDescription> MetadataColumnDescriptions => Set<MetadataColumnDescription>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -81,6 +82,23 @@ namespace metadata_forvaltningsplan_api.Models.Data
                 .Property(x => x.Handlaggare).HasColumnName("handlaggare");
             modelBuilder.Entity<Metadata>()
                 .Property(x => x.MetaDataVersion).HasColumnName("metadata_version");
+
+            // Configure MetadataColumnDescription entity
+            modelBuilder.Entity<MetadataColumnDescription>()
+                .ToTable("geodata_metadata_kolumner_beskrivning", "metadata")
+                .HasKey(x => x.Gid);
+            modelBuilder.Entity<MetadataColumnDescription>()
+               .Property(x => x.Gid).HasColumnName("gid");
+            modelBuilder.Entity<MetadataColumnDescription>()
+                .Property(x => x.TableSchema).HasColumnName("table_schema");
+            modelBuilder.Entity<MetadataColumnDescription>()
+                .Property(x => x.TableName).HasColumnName("table_name");
+            modelBuilder.Entity<MetadataColumnDescription>()
+                .Property(x => x.ColumnName).HasColumnName("column_name");
+            modelBuilder.Entity<MetadataColumnDescription>()
+                .Property(x => x.ColumnDescription).HasColumnName("column_description");
+            modelBuilder.Entity<MetadataColumnDescription>()
+                .Property(x => x.ColumnTitle).HasColumnName("column_title");
 
             // Configure ManagementPlan entity
             modelBuilder.Entity<ManagementPlan>()

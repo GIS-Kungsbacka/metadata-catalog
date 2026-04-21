@@ -1,0 +1,19 @@
+[
+  {
+    "gid": 1,
+    "tableSchema": "metadata",
+    "tableName": "geodata_metadata_kolumner_beskrivning",
+    "columnName": "table_name",
+    "columnDescription": "Namnet på tabellen som kolumnen tillhör.",
+    "columnTitle": "Tabellnamn"
+  },
+  {
+    "gid": 2,
+    "tableSchema": "metadata",
+    "tableName": "geodata_metadata_kolumner_beskrivning",
+    "columnName": "column_description",
+    "columnDescription": "Beskrivning av vad kolumnen representerar.",
+    "columnTitle": "Kolumnbeskrivning"
+  }
+]
+

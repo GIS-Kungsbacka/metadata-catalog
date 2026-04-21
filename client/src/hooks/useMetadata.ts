@@ -1,6 +1,8 @@
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { metadataRequests } from "../api/metadata-requests";
 import type { Metadata } from "../types/metadata";
+import { metadataColumnDescRequests } from "../api/metadata-columnDesc-requests";
+import type { MetadataColumnDescription } from "../types/metadata-columndescription";
 
 type Options = {
   enabled?: boolean;
@@ -27,6 +29,16 @@ export const useMetadataById = (
   return useQuery({
     queryKey: ["metadata", gid],
     queryFn: () => metadataRequests.getById(gid),
+    enabled: options?.enabled ?? true,
+  });
+};
+
+export const useMetadataColumnDescription = (
+  options?: Options
+): UseQueryResult<MetadataColumnDescription[]> => {
+  return useQuery({
+    queryKey: ["metadataColumnDescription"],
+    queryFn: metadataColumnDescRequests.getAll,
     enabled: options?.enabled ?? true,
   });
 };

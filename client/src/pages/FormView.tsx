@@ -15,11 +15,25 @@ import {
   Chip,
   IconButton,
   Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
 } from "@mui/material";
-import { ArrowBack, Download, Link } from "@mui/icons-material";
+import { ArrowBack, Download, Link, TableView } from "@mui/icons-material";
 import CheckCircleOutlineOutlinedIcon from "@mui/icons-material/CheckCircleOutlineOutlined";
 import jsPDF from "jspdf";
-import { useMetadata } from "../hooks/useMetadata";
+import {
+  useMetadata,
+  useMetadataColumnDescription,
+} from "../hooks/useMetadata";
 import { useManagementPlan } from "../hooks/useManagementPlan";
 import type { Metadata } from "../types/metadata";
 import type { ManagementPlan } from "../types/management-plan";
@@ -215,6 +229,8 @@ export default function FormView({
   const navigate = useNavigate();
   const location = useLocation();
   const [linkCopied, setLinkCopied] = useState(false);
+  const [columnDialogOpen, setColumnDialogOpen] = useState(false);
+  const [tableViewClicked, setTableViewClicked] = useState(false);
 
   const arende =
     kind === "metadata"
@@ -224,6 +240,9 @@ export default function FormView({
 
   const metadataListQuery = useMetadata({
     enabled: arendeIsValid && kind === "metadata",
+  });
+  const metadataColumnDescriptionsQuery = useMetadataColumnDescription({
+    enabled: columnDialogOpen && kind === "metadata",
   });
   const managementPlanListQuery = useManagementPlan({
     enabled: arendeIsValid && kind === "managementplan",
@@ -362,7 +381,12 @@ export default function FormView({
 
     return (
       <Grid size={{ xs: 12, sm: 6 }} key={key}>
-        <Typography variant="caption" color="text.secondary" display="block">
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          display="block"
+          sx={{ fontWeight: 900 }}
+        >
           {label}
         </Typography>
         <Typography variant="body1" sx={{ wordBreak: "break-word" }}>
@@ -399,6 +423,20 @@ export default function FormView({
         })()
       : undefined;
 
+  const columnDescriptionsForCurrentMetadata =
+    kind === "metadata"
+      ? (() => {
+          const schemaNamn = ((item as Metadata).schemaNamn ?? "").trim();
+          const namn = ((item as Metadata).namn ?? "").trim();
+          const all = metadataColumnDescriptionsQuery.data ?? [];
+          return all.filter(
+            (x) =>
+              (x.tableSchema ?? "").trim() === schemaNamn &&
+              (x.tableName ?? "").trim() === namn
+          );
+        })()
+      : [];
+
   return (
     <Container maxWidth="md">
       <Button
@@ -419,22 +457,64 @@ export default function FormView({
             }}
           >
             <Box sx={{ minWidth: 0, pr: 2 }}>
-              <Typography
-                variant="h4"
-                component="h1"
-                gutterBottom
-                fontWeight={600}
-                sx={{ wordBreak: "break-word" }}
-              >
-                {title}
-              </Typography>
               {derivedManagementPlanTitle ? (
-                <Typography variant="body2" color="text.secondary">
-                  Förvaltningsplan: {derivedManagementPlanTitle}
+                <Typography
+                  variant="h4"
+                  component="h1"
+                  gutterBottom
+                  fontWeight={600}
+                  sx={{ wordBreak: "break-word" }}
+                >
+                  {derivedManagementPlanTitle}
                 </Typography>
               ) : null}
+              <Typography variant="body2" color="text.secondary">
+                {title}
+              </Typography>
             </Box>
             <Box sx={{ display: "flex", alignItems: "center" }}>
+              {kind === "metadata" ? (
+                <Tooltip title="Visa attributtabell">
+                  <IconButton
+                    onClick={() => {
+                      setTableViewClicked(true);
+                      setColumnDialogOpen(true);
+                    }}
+                    color="primary"
+                    sx={{
+                      ml: 2,
+                      border: "1px solid",
+                      borderColor: "primary.main",
+                      bgcolor: "rgba(25, 118, 210, 0.08)",
+                      animation: tableViewClicked
+                        ? "none"
+                        : "tableViewPulse 1.6s ease-in-out infinite",
+                      "@keyframes tableViewPulse": {
+                        "0%": {
+                          transform: "scale(1)",
+                          boxShadow: "0 0 0 0 rgba(25, 118, 210, 0.45)",
+                        },
+                        "65%": {
+                          transform: "scale(1.06)",
+                          boxShadow: "0 0 0 10px rgba(25, 118, 210, 0)",
+                        },
+                        "100%": {
+                          transform: "scale(1)",
+                          boxShadow: "0 0 0 0 rgba(25, 118, 210, 0)",
+                        },
+                      },
+                      "@media (prefers-reduced-motion: reduce)": {
+                        animation: "none",
+                      },
+                      "&:hover": {
+                        bgcolor: "rgba(25, 118, 210, 0.14)",
+                      },
+                    }}
+                  >
+                    <TableView />
+                  </IconButton>
+                </Tooltip>
+              ) : null}
               <Tooltip
                 title={linkCopied ? "Länk kopierad" : "Kopiera länk"}
                 disableInteractive
@@ -518,6 +598,64 @@ export default function FormView({
           </Grid>
         </CardContent>
       </Card>
+
+      <Dialog
+        open={columnDialogOpen}
+        onClose={() => setColumnDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>Attributtabell</DialogTitle>
+        <DialogContent dividers>
+          {metadataColumnDescriptionsQuery.isLoading ? (
+            <Box sx={{ display: "flex", justifyContent: "center", py: 3 }}>
+              <CircularProgress />
+            </Box>
+          ) : metadataColumnDescriptionsQuery.error ? (
+            <Alert severity="error">
+              {metadataColumnDescriptionsQuery.error instanceof Error
+                ? metadataColumnDescriptionsQuery.error.message
+                : "Kunde inte ladda attributtabell."}
+            </Alert>
+          ) : columnDescriptionsForCurrentMetadata.length === 0 ? (
+            <Alert severity="info">
+              Inga attributt hittades för{" "}
+              <strong>{(item as Metadata).schemaNamn}</strong> /{" "}
+              <strong>{(item as Metadata).namn}</strong>.
+            </Alert>
+          ) : (
+            <TableContainer component={Paper} variant="outlined">
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 700 }}>columnName</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>columnTitle</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>
+                      columnDescription
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {columnDescriptionsForCurrentMetadata.map((row) => (
+                    <TableRow key={row.gid}>
+                      <TableCell sx={{ fontFamily: "monospace" }}>
+                        {row.columnName}
+                      </TableCell>
+                      <TableCell>{row.columnTitle}</TableCell>
+                      <TableCell sx={{ whiteSpace: "pre-wrap" }}>
+                        {row.columnDescription}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setColumnDialogOpen(false)}>Stäng</Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 }
