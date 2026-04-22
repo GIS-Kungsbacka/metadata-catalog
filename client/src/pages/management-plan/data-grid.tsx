@@ -65,6 +65,11 @@ function readGridPreferences(): {
     pageSize: 10,
   };
 
+  const enforceHiddenColumns = (model: Record<string, boolean>) => ({
+    ...model,
+    gid: false,
+  });
+
   try {
     const raw = localStorage.getItem(COLUMN_VISIBILITY_STORAGE_KEY);
     if (!raw) return fallback;
@@ -75,7 +80,9 @@ function readGridPreferences(): {
     if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
       return {
         ...fallback,
-        columnVisibilityModel: parsed as Record<string, boolean>,
+        columnVisibilityModel: enforceHiddenColumns(
+          parsed as Record<string, boolean>
+        ),
       };
     }
 
@@ -90,7 +97,7 @@ function readGridPreferences(): {
     return {
       columnVisibilityModel:
         vis && typeof vis === "object" && !Array.isArray(vis)
-          ? (vis as Record<string, boolean>)
+          ? enforceHiddenColumns(vis as Record<string, boolean>)
           : fallback.columnVisibilityModel,
       density:
         density === "compact" ||
@@ -149,7 +156,7 @@ function formatDateOnly(value: unknown): string {
 }
 
 const defaultColumnVisibility = {
-  gid: true,
+  gid: false,
   namn: true,
   titel: true,
   schemaNamn: true,
@@ -409,12 +416,17 @@ export default function ManagementPlanGrid({
       field: "gid",
       headerName: "GID",
       width: 80,
+      hideable: false,
       renderCell: (params: GridRenderCellParams) => (
         <Box sx={{ pl: 2 }}>{params.value}</Box>
       ),
     },
     {
       field: "arendeNummberOpenE",
+      hideable: false,
+      renderCell: (params: GridRenderCellParams) => (
+        <Box sx={{ pl: 2 }}>{params.value}</Box>
+      ),
       headerName: "Ärendenummer OpenE",
       minWidth: 170,
       flex: 0.8,
@@ -748,7 +760,7 @@ export default function ManagementPlanGrid({
               borderColor: "divider",
             },
             "& .MuiDataGrid-columnHeaderTitle": { fontWeight: 600 },
-            '& .MuiDataGrid-columnHeader[data-field="gid"] .MuiDataGrid-columnHeaderTitleContainer':
+            '& .MuiDataGrid-columnHeader[data-field="arendeNummberOpenE"] .MuiDataGrid-columnHeaderTitleContainer':
               { pl: 1 },
             "& .MuiDataGrid-columnSeparator": {
               color: mode === "light" ? "grey" : "white",

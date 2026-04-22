@@ -40,7 +40,6 @@ import type { ManagementPlan } from "../types/management-plan";
 import { statusChipColor } from "../utils/status-chip";
 
 const metadataFieldLabels: Partial<Record<keyof Metadata, string>> = {
-  gid: "GID",
   namn: "Namn",
   schemaNamn: "Schema",
   beskrivning: "Beskrivning",
@@ -76,7 +75,6 @@ const metadataFieldLabels: Partial<Record<keyof Metadata, string>> = {
 
 const managementPlanFieldLabels: Partial<Record<keyof ManagementPlan, string>> =
   {
-    gid: "GID",
     namn: "Namn",
     titel: "Titel",
     schemaNamn: "Schema",

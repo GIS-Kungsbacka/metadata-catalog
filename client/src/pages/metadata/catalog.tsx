@@ -66,9 +66,9 @@ function metadataToSearchText(it: Metadata) {
 type ImageLoadState = "idle" | "loading" | "loaded" | "error";
 
 function usePreloadImages(urls: string[]) {
-  const [stateByUrl, setStateByUrl] = React.useState<Record<string, ImageLoadState>>(
-    {}
-  );
+  const [stateByUrl, setStateByUrl] = React.useState<
+    Record<string, ImageLoadState>
+  >({});
 
   React.useEffect(() => {
     if (urls.length === 0) return;
@@ -302,18 +302,37 @@ export default function MetadataCatalog() {
                 <CardContent sx={{ py: 1.5, width: "100%", flexGrow: 1 }}>
                   <Typography
                     variant="body2"
+                    component="div"
                     sx={{ fontWeight: 700, textAlign: "center" }}
                   >
                     <Box
                       sx={{
-                        display: "inline-flex",
+                        display: "inline-grid",
+                        gridTemplateColumns: "minmax(0, 1fr) auto",
                         alignItems: "center",
-                        gap: 1,
-                        flexWrap: "wrap",
                         justifyContent: "center",
+                        columnGap: 1,
+                        // Keep a consistent text-block height even when the title is short.
+                        minHeight: "2.5em",
+                        maxWidth: "100%",
                       }}
                     >
-                      <Box component="span">{c.title}</Box>
+                      <Box
+                        component="span"
+                        sx={{
+                          display: "-webkit-box",
+                          WebkitBoxOrient: "vertical",
+                          WebkitLineClamp: 2,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          lineHeight: 1.25,
+                          textAlign: "center",
+                          // Allow wrapping/clamping within the grid cell.
+                          minWidth: 0,
+                        }}
+                      >
+                        {c.title}
+                      </Box>
                       <Chip
                         size="small"
                         variant="filled"
