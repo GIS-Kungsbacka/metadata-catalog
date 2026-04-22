@@ -628,11 +628,9 @@ export default function FormView({
               <Table size="small">
                 <TableHead>
                   <TableRow>
-                    <TableCell sx={{ fontWeight: 700 }}>columnName</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>columnTitle</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>
-                      columnDescription
-                    </TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Namn</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Titel</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Beskrivning</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
