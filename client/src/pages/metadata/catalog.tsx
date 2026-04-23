@@ -11,9 +11,20 @@ import {
   Alert,
   Chip,
   CircularProgress,
+  Tooltip,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  List,
+  ListItem,
+  ListItemText,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { useNavigate } from "react-router-dom";
 import { useMetadata } from "../../hooks/useMetadata";
 import { useClientConfig } from "../../config/client-config";
@@ -121,6 +132,7 @@ function usePreloadImages(urls: string[]) {
 export default function MetadataCatalog() {
   const navigate = useNavigate();
   const [query, setQuery] = React.useState("");
+  const [isSearchHelpOpen, setIsSearchHelpOpen] = React.useState(false);
   const { data: items = [], isLoading, isError } = useMetadata();
   const config = useClientConfig();
   const defaultCategoryImgSrc = React.useMemo(
@@ -204,10 +216,74 @@ export default function MetadataCatalog() {
                   <SearchOutlinedIcon fontSize="small" />
                 </InputAdornment>
               ),
+              endAdornment: (
+                <InputAdornment position="end">
+                  <Tooltip title="Söktips" arrow>
+                    <IconButton
+                      size="small"
+                      edge="end"
+                      aria-label="Söktips"
+                      onClick={() => setIsSearchHelpOpen(true)}
+                    >
+                      <InfoOutlinedIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </InputAdornment>
+              ),
             },
           }}
         />
       </Box>
+
+      <Dialog
+        open={isSearchHelpOpen}
+        onClose={() => setIsSearchHelpOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Söktips</DialogTitle>
+        <DialogContent dividers>
+          <Typography variant="body2" sx={{ mb: 2 }}>
+            Du kan söka på både innehåll och metadata. Det betyder att du kan få
+            träffar även om ordet inte finns i ämnesområdets titel, till exempel
+            via beskrivning, ansvarig part, plats eller andra uppgifter om
+            datamängden.
+          </Typography>
+
+          <Typography variant="subtitle2" sx={{ mb: 1 }}>
+            Exempel på vad du kan söka på
+          </Typography>
+
+          <List dense disablePadding sx={{ mb: 1 }}>
+            <ListItem disableGutters>
+              <ListItemText primary="Ämne, nyckelord och kategori" />
+            </ListItem>
+            <ListItem disableGutters>
+              <ListItemText primary="Organisation, ansvarig part och kontakt" />
+            </ListItem>
+            <ListItem disableGutters>
+              <ListItemText primary="Plats, område och geografiska namn" />
+            </ListItem>
+            <ListItem disableGutters>
+              <ListItemText primary="Datakälla, status och andra uppgifter om datamängden" />
+            </ListItem>
+          </List>
+
+          <Typography variant="body2" color="text.secondary">
+            Tips: prova att kombinera flera ord, till exempel “geoteknik
+            bygglov” eller “vattendrag WMS”.
+          </Typography>
+        </DialogContent>
+
+        <DialogActions>
+          <Button
+            onClick={() => setIsSearchHelpOpen(false)}
+            variant="contained"
+          >
+            Stäng
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {isError ? (
         <Alert severity="warning" sx={{ mb: 2 }}>
