@@ -722,9 +722,11 @@ export default function ManagementPlanGrid({
           disableRowSelectionOnClick
           onRowClick={(params) =>
             navigate(
-              params.row.arendeNummberOpenE
+              params.row.schemaNamn && params.row.namn
                 ? `/managementplan/${encodeURIComponent(
-                    String(params.row.arendeNummberOpenE).trim()
+                    `${String(params.row.schemaNamn).trim()}_${String(
+                      params.row.namn
+                    ).trim()}`
                   )}`
                 : `/managementplan`
             )

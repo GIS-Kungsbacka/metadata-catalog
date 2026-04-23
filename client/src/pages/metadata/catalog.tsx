@@ -25,6 +25,7 @@ import {
 import Grid from "@mui/material/Grid";
 import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import ClearIcon from "@mui/icons-material/Clear";
 import { useNavigate } from "react-router-dom";
 import { useMetadata } from "../../hooks/useMetadata";
 import { useClientConfig } from "../../config/client-config";
@@ -218,6 +219,16 @@ export default function MetadataCatalog() {
               ),
               endAdornment: (
                 <InputAdornment position="end">
+                  {query.trim().length > 0 ? (
+                    <IconButton
+                      size="small"
+                      aria-label="Rensa sök"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => setQuery("")}
+                    >
+                      <ClearIcon fontSize="small" />
+                    </IconButton>
+                  ) : null}
                   <Tooltip title="Söktips" arrow>
                     <IconButton
                       size="small"

@@ -59,7 +59,7 @@ function App() {
               { path: "metadata", element: <MetadataCatalog /> },
               { path: "metadata/list", element: <MetadataGrid mode={mode} /> },
               {
-                path: "metadata/:arendeNummerOpenE",
+                path: "metadata/:schemaNamnNamn",
                 element: <FormView kind="metadata" />,
               },
               {
@@ -67,7 +67,7 @@ function App() {
                 element: <ManagementPlanGrid mode={mode} />,
               },
               {
-                path: "managementplan/:arendeNummberOpenE",
+                path: "managementplan/:schemaNamnNamn",
                 element: <FormView kind="managementplan" />,
               },
             ],

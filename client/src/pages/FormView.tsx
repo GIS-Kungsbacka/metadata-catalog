@@ -1,4 +1,4 @@
-import { useState } from "react";
+import * as React from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
   Box,
@@ -220,54 +220,56 @@ export default function FormView({
 }: {
   kind: "metadata" | "managementplan";
 }) {
-  const { arendeNummerOpenE, arendeNummberOpenE } = useParams<{
-    arendeNummerOpenE?: string;
-    arendeNummberOpenE?: string;
+  const [linkCopied, setLinkCopied] = React.useState(false);
+  const [columnDialogOpen, setColumnDialogOpen] = React.useState(false);
+  const [tableViewClicked, setTableViewClicked] = React.useState(false);
+  const { schemaNamnNamn } = useParams<{
+    schemaNamnNamn?: string;
   }>();
   const navigate = useNavigate();
   const location = useLocation();
-  const [linkCopied, setLinkCopied] = useState(false);
-  const [columnDialogOpen, setColumnDialogOpen] = useState(false);
-  const [tableViewClicked, setTableViewClicked] = useState(false);
 
-  const arende =
-    kind === "metadata"
-      ? (arendeNummerOpenE ?? "").trim()
-      : (arendeNummberOpenE ?? "").trim();
-  const arendeIsValid = Boolean(arende);
+  const rawKey = (schemaNamnNamn ?? "").trim();
+  const keyIsValid = Boolean(rawKey);
 
   const metadataListQuery = useMetadata({
-    enabled: arendeIsValid && kind === "metadata",
+    enabled: keyIsValid && kind === "metadata",
   });
   const metadataColumnDescriptionsQuery = useMetadataColumnDescription({
     enabled: columnDialogOpen && kind === "metadata",
   });
   const managementPlanListQuery = useManagementPlan({
-    enabled: arendeIsValid && kind === "managementplan",
+    enabled: keyIsValid && kind === "managementplan",
   });
   const managementPlansQuery = useManagementPlan({
     enabled: kind === "metadata",
   });
 
+  const makeCombinedKey = React.useCallback(
+    (schema: unknown, name: unknown) =>
+      `${String(schema ?? "").trim()}_${String(name ?? "").trim()}`.trim(),
+    []
+  );
+
   const listItem =
-    arendeIsValid && kind === "metadata"
+    keyIsValid && kind === "metadata"
       ? (metadataListQuery.data ?? []).find(
-          (m) => (m.arendeNummerOpenE ?? "").trim() === arende
+          (m) => makeCombinedKey(m.schemaNamn, m.namn) === rawKey
         )
-      : arendeIsValid && kind === "managementplan"
+      : keyIsValid && kind === "managementplan"
       ? (managementPlanListQuery.data ?? []).find(
-          (p) => (p.arendeNummberOpenE ?? "").trim() === arende
+          (p) => makeCombinedKey(p.schemaNamn, p.namn) === rawKey
         )
       : undefined;
 
-  const item = arendeIsValid ? (listItem as any) : undefined;
+  const item = keyIsValid ? (listItem as any) : undefined;
 
-  const isLoading = arendeIsValid
+  const isLoading = keyIsValid
     ? kind === "metadata"
       ? metadataListQuery.isLoading
       : managementPlanListQuery.isLoading
     : false;
-  const error = arendeIsValid
+  const error = keyIsValid
     ? kind === "metadata"
       ? metadataListQuery.error
       : managementPlanListQuery.error
@@ -302,11 +304,11 @@ export default function FormView({
     );
   }
 
-  if (!arendeIsValid) {
+  if (!keyIsValid) {
     return (
       <Container maxWidth="md">
         <Box sx={{ mt: 4 }}>
-          <Alert severity="error">Ogiltigt ärendenummer.</Alert>
+          <Alert severity="error">Ogiltig länk.</Alert>
           <Button
             startIcon={<ArrowBack />}
             onClick={() => navigate(backTo)}
@@ -396,10 +398,10 @@ export default function FormView({
 
   const title =
     kind === "metadata"
-      ? (item as Metadata).namn || `Metadata ${arende}`
+      ? (item as Metadata).namn || "Metadata"
       : (item as ManagementPlan).titel ||
         (item as ManagementPlan).namn ||
-        `Förvaltningsplan ${arende}`;
+        "Förvaltningsplan";
 
   const managementPlanTitleByArende = (() => {
     const map = new Map<string, string>();

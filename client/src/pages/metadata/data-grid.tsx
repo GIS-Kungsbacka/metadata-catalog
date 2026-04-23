@@ -732,9 +732,11 @@ export default function MetadataGrid({ mode }: { mode: "light" | "dark" }) {
           disableRowSelectionOnClick
           onRowClick={(params) =>
             navigate(
-              params.row.arendeNummerOpenE
+              params.row.schemaNamn && params.row.namn
                 ? `/metadata/${encodeURIComponent(
-                    String(params.row.arendeNummerOpenE).trim()
+                    `${String(params.row.schemaNamn).trim()}_${String(
+                      params.row.namn
+                    ).trim()}`
                   )}`
                 : `/metadata`,
               {
