@@ -107,6 +107,120 @@ const managementPlanFieldLabels: Partial<Record<keyof ManagementPlan, string>> =
     andradAv: "Ändrad av",
   };
 
+const metadataSections: Array<{
+  title: string;
+  keys: (keyof Metadata)[];
+}> = [
+  {
+    title: "Grundläggande identitet",
+    keys: ["schemaNamn", "namn", "metaDataVersion"],
+  },
+  {
+    title: "Beskrivning och syfte",
+    keys: ["beskrivning", "syfte", "kategori", "nyckelOrd", "projekt"],
+  },
+  {
+    title: "Ursprung och datakälla",
+    keys: ["dataKallaTyp", "ursprung", "metod", "metodUrl"],
+  },
+  {
+    title: "Geografisk och detaljnivå",
+    keys: ["geografiskBegransning", "skalniva"],
+  },
+  {
+    title: "Tidsinformation",
+    keys: [
+      "skapelseDatum",
+      "tidsperiodStartdatum",
+      "tidsperiodSlutdatum",
+      "tidsUpplosning",
+    ],
+  },
+  {
+    title: "Kvalitet och uppdatering",
+    keys: ["uppdateringsFrekvens", "fullstandighet"],
+  },
+  {
+    title: "Åtkomst, licens och säkerhet",
+    keys: [
+      "anvandarBegransningLicens",
+      "anvandarBegransningLicensText",
+      "sakerhetsKlass",
+    ],
+  },
+  {
+    title: "Struktur och relationer",
+    keys: ["kolumnBeskrivningUrl", "relateradeResurser"],
+  },
+  {
+    title: "Status",
+    keys: [
+      "arendeNummerOpenE",
+      "bestallareNamn",
+      "bestallareEpost",
+      "handlaggare",
+      "status",
+    ],
+  },
+];
+
+const managementPlanSections: Array<{
+  title: string;
+  keys: (keyof ManagementPlan)[];
+}> = [
+  {
+    title: "Grundläggande identitet",
+    keys: ["titel", "namn", "schemaNamn", "forvaltningsplanVersion"],
+  },
+  {
+    title: "Ansvar och roller",
+    keys: [
+      "dataAgare",
+      "dataForvaltare",
+      "dataAdministrator",
+      "dataKonsument",
+      "handlaggare",
+    ],
+  },
+  {
+    title: "Publicering och åtkomst",
+    keys: [
+      "publicerad",
+      "oppnaData",
+      "atkomst",
+      "integration",
+      "redigeringsKalla",
+    ],
+  },
+  {
+    title: "Dokumentation och information",
+    keys: ["dokumentSkUrl", "dokuementInfoUrl", "ovrigInformation"],
+  },
+  {
+    title: "Livscykel och arkivering",
+    keys: [
+      "kritiskDatamangd",
+      "arkivering",
+      "arkiveringTidpunkt",
+      "skapadTidPunkt",
+      "skapadAv",
+      "andradTidPunkt",
+      "andradAv",
+    ],
+  },
+  {
+    title: "Status",
+    keys: [
+      "arendeNummberOpenE",
+      "bestallareNamn",
+      "bestallareEpost",
+      "sakerhetsklass",
+      "datakallaTyp",
+      "status",
+    ],
+  },
+];
+
 function formatDateOnly(value: unknown): string | undefined {
   if (value === null || value === undefined) return undefined;
 
@@ -231,6 +345,10 @@ export default function FormView({
 
   const rawKey = (schemaNamnNamn ?? "").trim();
   const keyIsValid = Boolean(rawKey);
+  const norm = React.useCallback(
+    (value: string | null | undefined) => (value ?? "").trim().toLowerCase(),
+    []
+  );
 
   const metadataListQuery = useMetadata({
     enabled: keyIsValid && kind === "metadata",
@@ -370,17 +488,15 @@ export default function FormView({
         })()
       : baseBackTo);
 
-  const displayKeys = Object.keys(fieldLabels) as (keyof typeof fieldLabels)[];
-
-  const renderField = (key: string) => {
-    const label = fieldLabels[key as keyof typeof fieldLabels];
+  const renderMetadataField = (key: keyof Metadata) => {
+    const label = metadataFieldLabels[key];
     if (!label) return null;
 
-    const value = (item as unknown as Record<string, unknown>)[key];
-    const display = formatValue(value, key);
+    const value = (item as Metadata)?.[key];
+    const display = formatValue(value, String(key));
 
     return (
-      <Grid size={{ xs: 12, sm: 6 }} key={key}>
+      <Grid size={{ xs: 12, sm: 4 }} key={String(key)}>
         <Typography
           variant="caption"
           color="text.secondary"
@@ -396,21 +512,38 @@ export default function FormView({
     );
   };
 
-  const title =
-    kind === "metadata"
-      ? (item as Metadata).namn || "Metadata"
-      : (item as ManagementPlan).titel ||
-        (item as ManagementPlan).namn ||
-        "Förvaltningsplan";
+  const renderManagementPlanField = (key: keyof ManagementPlan) => {
+    const label = managementPlanFieldLabels[key];
+    if (!label) return null;
 
-  const managementPlanTitleByArende = (() => {
+    const value = (item as ManagementPlan)?.[key];
+    const display = formatValue(value, String(key));
+
+    return (
+      <Grid size={{ xs: 12, sm: 4 }} key={String(key)}>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          display="block"
+          sx={{ fontWeight: 900 }}
+        >
+          {label}
+        </Typography>
+        <Typography variant="body1" sx={{ wordBreak: "break-word" }}>
+          {display || "-"}
+        </Typography>
+      </Grid>
+    );
+  };
+
+  const managementPlanHeaderByName = (() => {
     const map = new Map<string, string>();
     for (const p of managementPlansQuery.data ?? []) {
-      const arende = (p.arendeNummberOpenE ?? "").trim();
-      if (!arende) continue;
+      const name = norm(p.namn);
+      if (!name) continue;
       const t = (p.titel ?? p.namn ?? "").trim();
       if (!t) continue;
-      if (!map.has(arende)) map.set(arende, t);
+      if (!map.has(name)) map.set(name, t);
     }
     return map;
   })();
@@ -418,10 +551,19 @@ export default function FormView({
   const derivedManagementPlanTitle =
     kind === "metadata"
       ? (() => {
-          const arende = ((item as Metadata).arendeNummerOpenE ?? "").trim();
-          return arende ? managementPlanTitleByArende.get(arende) : undefined;
+          const metadataName = norm((item as Metadata).namn);
+          return metadataName
+            ? managementPlanHeaderByName.get(metadataName)
+            : undefined;
         })()
       : undefined;
+
+  const title =
+    kind === "metadata"
+      ? derivedManagementPlanTitle || (item as Metadata).namn || "Metadata"
+      : (item as ManagementPlan).titel ||
+        (item as ManagementPlan).namn ||
+        "Förvaltningsplan";
 
   const columnDescriptionsForCurrentMetadata =
     kind === "metadata"
@@ -457,18 +599,13 @@ export default function FormView({
             }}
           >
             <Box sx={{ minWidth: 0, pr: 2 }}>
-              {derivedManagementPlanTitle ? (
-                <Typography
-                  variant="h4"
-                  component="h1"
-                  gutterBottom
-                  fontWeight={600}
-                  sx={{ wordBreak: "break-word" }}
-                >
-                  {derivedManagementPlanTitle}
-                </Typography>
-              ) : null}
-              <Typography variant="body2" color="text.secondary">
+              <Typography
+                variant="h4"
+                component="h1"
+                gutterBottom
+                fontWeight={600}
+                sx={{ wordBreak: "break-word" }}
+              >
                 {title}
               </Typography>
             </Box>
@@ -586,16 +723,41 @@ export default function FormView({
             />
           </Stack>
           <Divider sx={{ my: 1.5 }} />
-          <Typography
-            variant="body1"
-            sx={{ mt: 2, mb: 2, fontSize: 17, fontWeight: 600 }}
-          >
-            Detaljer
-          </Typography>
-
-          <Grid container spacing={2}>
-            {displayKeys.map((key) => renderField(String(key)))}
-          </Grid>
+          {kind === "metadata" ? (
+            <Box sx={{ mt: 1 }}>
+              {metadataSections.map((section) => (
+                <Box key={section.title} sx={{ mt: 5 }}>
+                  <Typography
+                    variant="body1"
+                    sx={{ fontSize: 15, fontWeight: 800, mb: 1 }}
+                  >
+                    {section.title}
+                  </Typography>
+                  <Divider sx={{ mb: 1.5 }} />
+                  <Grid container spacing={2}>
+                    {section.keys.map((key) => renderMetadataField(key))}
+                  </Grid>
+                </Box>
+              ))}
+            </Box>
+          ) : (
+            <Box sx={{ mt: 1 }}>
+              {managementPlanSections.map((section) => (
+                <Box key={section.title} sx={{ mt: 5 }}>
+                  <Typography
+                    variant="body1"
+                    sx={{ fontSize: 15, fontWeight: 800, mb: 1 }}
+                  >
+                    {section.title}
+                  </Typography>
+                  <Divider sx={{ mb: 1.5 }} />
+                  <Grid container spacing={2}>
+                    {section.keys.map((key) => renderManagementPlanField(key))}
+                  </Grid>
+                </Box>
+              ))}
+            </Box>
+          )}
         </CardContent>
       </Card>
 
