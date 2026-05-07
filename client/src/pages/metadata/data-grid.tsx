@@ -85,7 +85,7 @@ function readGridPreferences(): {
       return {
         ...fallback,
         columnVisibilityModel: enforceHiddenColumns(
-          parsed as Record<string, boolean>
+          parsed as Record<string, boolean>,
         ),
       };
     }
@@ -129,7 +129,9 @@ function writeGridPreferences(prefs: {
 
   try {
     localStorage.setItem(COLUMN_VISIBILITY_STORAGE_KEY, JSON.stringify(store));
-  } catch {}
+  } catch {
+    // Ignore errors
+  }
 }
 
 const defaultColumnVisibility = {
@@ -170,7 +172,6 @@ const defaultColumnVisibility = {
 
 const ColumnsToolbarButton = React.forwardRef(function ColumnsToolbarButton(
   props: React.ComponentProps<typeof ToolbarButton>,
-  _ref
 ) {
   return (
     <Tooltip title="Kolumner">
@@ -195,12 +196,12 @@ function MetadataToolbar({
   const effectiveOnDensityChange = onDensityChange ?? (() => {});
 
   const [exportAnchor, setExportAnchor] = React.useState<null | HTMLElement>(
-    null
+    null,
   );
   const exportOpen = Boolean(exportAnchor);
 
   const [densityAnchor, setDensityAnchor] = React.useState<null | HTMLElement>(
-    null
+    null,
   );
   const densityOpen = Boolean(densityAnchor);
 
@@ -249,12 +250,12 @@ function MetadataToolbar({
                     d === "compact"
                       ? "Kompakt"
                       : d === "standard"
-                      ? "Standard"
-                      : "Komfortabelt"
+                        ? "Standard"
+                        : "Komfortabelt"
                   }
                 />
               </MenuItem>
-            )
+            ),
           )}
         </Menu>
 
@@ -425,12 +426,12 @@ export default function MetadataGrid({ mode }: { mode: "light" | "dark" }) {
   const setColumnVisibilityModel = React.useCallback(
     (next: Record<string, boolean>) =>
       setGridPrefs((p) => ({ ...p, columnVisibilityModel: next })),
-    []
+    [],
   );
 
   const setDensity = React.useCallback(
     (next: GridDensity) => setGridPrefs((p) => ({ ...p, density: next })),
-    []
+    [],
   );
 
   const [paginationModel, setPaginationModel] =
@@ -438,7 +439,7 @@ export default function MetadataGrid({ mode }: { mode: "light" | "dark" }) {
 
   React.useEffect(() => {
     setPaginationModel((m) =>
-      m.pageSize === pageSize ? m : { ...m, pageSize }
+      m.pageSize === pageSize ? m : { ...m, pageSize },
     );
   }, [pageSize]);
 
@@ -524,7 +525,7 @@ export default function MetadataGrid({ mode }: { mode: "light" | "dark" }) {
       flex: 1,
     },
     // "namn" is often short in this dataset, so keep it compact.
-    { field: "namn", headerName: "Namn", minWidth: 110, flex: 0.4 },
+    { field: "namn", headerName: "Namn", minWidth: 150, flex: 1 },
     {
       field: "forvaltningsplanTitel",
       headerName: "Titel",
@@ -532,7 +533,7 @@ export default function MetadataGrid({ mode }: { mode: "light" | "dark" }) {
       flex: 0.7,
       valueGetter: (_value, row) => {
         const arende = (row.arendeNummerOpenE ?? "").trim();
-        return arende ? planTitleByArende.get(arende) ?? "" : "";
+        return arende ? (planTitleByArende.get(arende) ?? "") : "";
       },
     },
     { field: "schemaNamn", headerName: "Schema", minWidth: 140, flex: 0.7 },
@@ -675,7 +676,7 @@ export default function MetadataGrid({ mode }: { mode: "light" | "dark" }) {
 
   const filteredItems = selectedKategori
     ? items.filter(
-        (i) => (i.kategori ?? "").toLowerCase() === selectedKategoriLower
+        (i) => (i.kategori ?? "").toLowerCase() === selectedKategoriLower,
       )
     : items;
 
@@ -735,13 +736,13 @@ export default function MetadataGrid({ mode }: { mode: "light" | "dark" }) {
               params.row.schemaNamn && params.row.namn
                 ? `/metadata/${encodeURIComponent(
                     `${String(params.row.schemaNamn).trim()}_${String(
-                      params.row.namn
-                    ).trim()}`
+                      params.row.namn,
+                    ).trim()}`,
                   )}`
                 : `/metadata`,
               {
                 state: { backTo: `/metadata/list${location.search}` },
-              }
+              },
             )
           }
           pageSizeOptions={[10, 25, 50]}
@@ -750,7 +751,7 @@ export default function MetadataGrid({ mode }: { mode: "light" | "dark" }) {
           onPaginationModelChange={(m) => {
             setPaginationModel(m);
             setGridPrefs((p) =>
-              p.pageSize === m.pageSize ? p : { ...p, pageSize: m.pageSize }
+              p.pageSize === m.pageSize ? p : { ...p, pageSize: m.pageSize },
             );
           }}
           density={density}

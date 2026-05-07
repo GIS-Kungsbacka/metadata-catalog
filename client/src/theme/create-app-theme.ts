@@ -78,7 +78,7 @@ function buildThemeOptions(mode: AppColorMode): ThemeOptions {
             backgroundColor: theme.palette.background.paper,
             transition: theme.transitions.create(
               ["box-shadow", "border-color", "background-color"],
-              { duration: theme.transitions.duration.shorter }
+              { duration: theme.transitions.duration.shorter },
             ),
             "&.Mui-focused": {
               boxShadow: `0 0 0 4px ${alpha(theme.palette.primary.main, 0.18)}`,
@@ -98,8 +98,7 @@ function buildThemeOptions(mode: AppColorMode): ThemeOptions {
       },
 
       // MUI X (DataGrid). The key is not part of MUI core typings.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ...( {
+      ...({
         MuiDataGrid: {
           styleOverrides: {
             root: {
@@ -121,7 +120,7 @@ function buildThemeOptions(mode: AppColorMode): ThemeOptions {
             },
           },
         },
-      } as any),
+      } as unknown as Record<string, unknown>),
     },
   };
 }
@@ -129,4 +128,3 @@ function buildThemeOptions(mode: AppColorMode): ThemeOptions {
 export function createAppTheme(mode: AppColorMode) {
   return createTheme(buildThemeOptions(mode));
 }
-

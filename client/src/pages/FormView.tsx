@@ -27,7 +27,13 @@ import {
   TableRow,
   Paper,
 } from "@mui/material";
-import { ArrowBack, Download, Link, TableView } from "@mui/icons-material";
+import {
+  ArrowBack,
+  Download,
+  Link,
+  TableView,
+  OpenInNew,
+} from "@mui/icons-material";
 import CheckCircleOutlineOutlinedIcon from "@mui/icons-material/CheckCircleOutlineOutlined";
 import jsPDF from "jspdf";
 import {
@@ -255,77 +261,144 @@ function formatValue(value: unknown, key?: string): string {
   }
 
   if (typeof value === "boolean") return value ? "Ja" : "Nej";
-  if (Array.isArray(value)) return value.filter(Boolean).join(", ");
+  if (Array.isArray(value)) return value.filter(Boolean).join(", ") || "-";
   return String(value);
 }
 
-function generatePDF(
-  title: string,
-  item: Record<string, unknown>,
-  fieldLabels: Record<string, string>,
-  options?: {
-    subtitle?: string;
-  }
-) {
-  const doc = new jsPDF();
+function hasProp<K extends string>(
+  value: unknown,
+  key: K,
+): value is Record<K, unknown> {
+  return typeof value === "object" && value !== null && key in value;
+}
+
+function sanitizeFilenamePart(input: string): string {
+  const cleaned = input.trim().replace(/[^a-z0-9\-_]+/gi, "_");
+  return cleaned.replace(/^_+|_+$/g, "") || "export";
+}
+
+function createPdfTextWriter(doc: jsPDF) {
   const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 20;
   const maxWidth = pageWidth - 2 * margin;
   let yPosition = margin;
 
-  // Helper function to add text with word wrapping
+  const ensurePageSpace = () => {
+    if (yPosition > pageHeight - margin) {
+      doc.addPage();
+      yPosition = margin;
+    }
+  };
+
   const addText = (text: string, fontSize: number, isBold = false) => {
     doc.setFontSize(fontSize);
     doc.setFont("helvetica", isBold ? "bold" : "normal");
     const lines = doc.splitTextToSize(text, maxWidth);
     doc.text(lines, margin, yPosition);
     yPosition += lines.length * (fontSize * 0.4) + 5;
-
-    // Check if we need a new page
-    if (yPosition > doc.internal.pageSize.getHeight() - margin) {
-      doc.addPage();
-      yPosition = margin;
-    }
+    ensurePageSpace();
   };
+
+  const addSpacer = (height = 5) => {
+    yPosition += height;
+    ensurePageSpace();
+  };
+
+  return { addText, addSpacer };
+}
+
+function generateMetadataPDF(
+  title: string,
+  metadata: Metadata,
+  options?: { subtitle?: string },
+) {
+  const doc = new jsPDF();
+  const { addText, addSpacer } = createPdfTextWriter(doc);
 
   // Title
   addText(title || "Detaljer", 18, true);
-  yPosition += 5;
-
-  if (options?.subtitle) {
-    addText(options.subtitle, 12);
-    yPosition += 3;
-  }
+  addSpacer(5);
 
   // Add chips info if available
   const chipsInfo: string[] = [];
-  if (typeof item.kategori === "string" && item.kategori.trim())
-    chipsInfo.push(`Kategori: ${item.kategori}`);
-  if (typeof item.status === "string" && item.status.trim())
-    chipsInfo.push(`Status: ${item.status}`);
+  if (metadata.kategori)
+    chipsInfo.push(`Kategori: ${String(metadata.kategori)}`);
+  if (metadata.status) chipsInfo.push(`Status: ${String(metadata.status)}`);
   if (chipsInfo.length > 0) {
     addText(chipsInfo.join(" | "), 12);
-    yPosition += 5;
+    addSpacer(5);
   }
 
-  yPosition += 5;
+  if (options?.subtitle) {
+    addText(options.subtitle, 12);
+    addSpacer(3);
+  }
 
-  addText("Fält", 14, true);
-  yPosition += 3;
+  addSpacer(5);
 
-  Object.keys(fieldLabels).forEach((key) => {
-    const label = fieldLabels[key];
-    if (!label) return;
-    const value = formatValue(item[key], key);
-    addText(`${label}: ${value}`, 11);
-  });
+  for (const section of metadataSections) {
+    addText(section.title, 14, true);
+    addSpacer(3);
+
+    for (const key of section.keys) {
+      const label = metadataFieldLabels[key] ?? String(key);
+      const value = formatValue(metadata[key], String(key));
+      addText(`${label}: ${value}`, 11);
+    }
+
+    addSpacer(5);
+  }
 
   // Generate filename
-  const filename = `${(title || "Detaljer").replace(/[^a-z0-9]/gi, "_")}_${
+  const keySuffix =
+    `${(metadata.schemaNamn ?? "").trim()}_${(metadata.namn ?? "").trim()}`.trim() ||
+    title ||
+    "Detaljer";
+  const filename = `${sanitizeFilenamePart(keySuffix)}_${
     new Date().toISOString().split("T")[0]
   }.pdf`;
 
   // Save the PDF
+  doc.save(filename);
+}
+
+function generateManagementPlanPDF(title: string, plan: ManagementPlan) {
+  const doc = new jsPDF();
+  const { addText, addSpacer } = createPdfTextWriter(doc);
+
+  addText(title || "Detaljer", 18, true);
+  addSpacer(5);
+
+  const chipsInfo: string[] = [];
+  if (plan.status) chipsInfo.push(`Status: ${String(plan.status)}`);
+  if (chipsInfo.length > 0) {
+    addText(chipsInfo.join(" | "), 12);
+    addSpacer(5);
+  }
+
+  addSpacer(5);
+
+  for (const section of managementPlanSections) {
+    addText(section.title, 14, true);
+    addSpacer(3);
+
+    for (const key of section.keys) {
+      const label = managementPlanFieldLabels[key] ?? String(key);
+      const value = formatValue(plan[key], String(key));
+      addText(`${label}: ${value}`, 11);
+    }
+
+    addSpacer(5);
+  }
+
+  const keySuffix =
+    `${(plan.schemaNamn ?? "").trim()}_${(plan.namn ?? "").trim()}`.trim() ||
+    title ||
+    "Detaljer";
+  const filename = `${sanitizeFilenamePart(keySuffix)}_${
+    new Date().toISOString().split("T")[0]
+  }.pdf`;
   doc.save(filename);
 }
 
@@ -336,7 +409,6 @@ export default function FormView({
 }) {
   const [linkCopied, setLinkCopied] = React.useState(false);
   const [columnDialogOpen, setColumnDialogOpen] = React.useState(false);
-  const [tableViewClicked, setTableViewClicked] = React.useState(false);
   const { schemaNamnNamn } = useParams<{
     schemaNamnNamn?: string;
   }>();
@@ -347,11 +419,14 @@ export default function FormView({
   const keyIsValid = Boolean(rawKey);
   const norm = React.useCallback(
     (value: string | null | undefined) => (value ?? "").trim().toLowerCase(),
-    []
+    [],
   );
 
   const metadataListQuery = useMetadata({
     enabled: keyIsValid && kind === "metadata",
+  });
+  const metadataAllQuery = useMetadata({
+    enabled: keyIsValid && kind === "managementplan",
   });
   const metadataColumnDescriptionsQuery = useMetadataColumnDescription({
     enabled: columnDialogOpen && kind === "metadata",
@@ -366,21 +441,21 @@ export default function FormView({
   const makeCombinedKey = React.useCallback(
     (schema: unknown, name: unknown) =>
       `${String(schema ?? "").trim()}_${String(name ?? "").trim()}`.trim(),
-    []
+    [],
   );
 
   const listItem =
     keyIsValid && kind === "metadata"
       ? (metadataListQuery.data ?? []).find(
-          (m) => makeCombinedKey(m.schemaNamn, m.namn) === rawKey
+          (m) => makeCombinedKey(m.schemaNamn, m.namn) === rawKey,
         )
       : keyIsValid && kind === "managementplan"
-      ? (managementPlanListQuery.data ?? []).find(
-          (p) => makeCombinedKey(p.schemaNamn, p.namn) === rawKey
-        )
-      : undefined;
+        ? (managementPlanListQuery.data ?? []).find(
+            (p) => makeCombinedKey(p.schemaNamn, p.namn) === rawKey,
+          )
+        : undefined;
 
-  const item = keyIsValid ? (listItem as any) : undefined;
+  const item = keyIsValid ? (listItem as unknown) : undefined;
 
   const isLoading = keyIsValid
     ? kind === "metadata"
@@ -393,12 +468,10 @@ export default function FormView({
       : managementPlanListQuery.error
     : undefined;
 
-  const fieldLabels =
-    kind === "metadata" ? metadataFieldLabels : managementPlanFieldLabels;
-
   const backToFromState =
-    typeof (location.state as any)?.backTo === "string"
-      ? ((location.state as any).backTo as string)
+    typeof (location.state as unknown as { backTo?: string })?.backTo ===
+    "string"
+      ? ((location.state as unknown as { backTo?: string }).backTo as string)
       : undefined;
 
   const baseBackTo = kind === "metadata" ? "/metadata/list" : "/managementplan";
@@ -558,6 +631,61 @@ export default function FormView({
         })()
       : undefined;
 
+  const otherTarget = (() => {
+    if (!keyIsValid || !item) return undefined;
+
+    if (kind === "metadata") {
+      const metadataNameNorm = norm((item as Metadata).namn);
+      if (!metadataNameNorm) return undefined;
+
+      const metadataSchema = String((item as Metadata).schemaNamn ?? "").trim();
+      const plans = managementPlansQuery.data ?? [];
+
+      const preferred =
+        metadataSchema.trim() !== ""
+          ? plans.find(
+              (p) =>
+                norm(p.namn) === metadataNameNorm &&
+                String(p.schemaNamn ?? "").trim() === metadataSchema,
+            )
+          : undefined;
+
+      const fallback = plans.find((p) => norm(p.namn) === metadataNameNorm);
+      const match = preferred ?? fallback;
+      if (!match) return undefined;
+
+      const combined = makeCombinedKey(match.schemaNamn, match.namn);
+      return combined
+        ? `/managementplan/${encodeURIComponent(combined)}`
+        : undefined;
+    }
+
+    const planNameNorm = norm((item as ManagementPlan).namn);
+    if (!planNameNorm) return undefined;
+
+    const planSchema = String((item as ManagementPlan).schemaNamn ?? "").trim();
+    const metadatas = metadataAllQuery.data ?? [];
+
+    const preferred =
+      planSchema.trim() !== ""
+        ? metadatas.find(
+            (m) =>
+              norm(m.namn) === planNameNorm &&
+              String(m.schemaNamn ?? "").trim() === planSchema,
+          )
+        : undefined;
+
+    const fallback = metadatas.find((m) => norm(m.namn) === planNameNorm);
+    const match = preferred ?? fallback;
+    if (!match) return undefined;
+
+    const combined = makeCombinedKey(match.schemaNamn, match.namn);
+    return combined ? `/metadata/${encodeURIComponent(combined)}` : undefined;
+  })();
+
+  const otherTargetLabel =
+    kind === "metadata" ? "Öppna förvaltningsplan" : "Öppna metadata";
+
   const title =
     kind === "metadata"
       ? derivedManagementPlanTitle || (item as Metadata).namn || "Metadata"
@@ -574,7 +702,7 @@ export default function FormView({
           return all.filter(
             (x) =>
               (x.tableSchema ?? "").trim() === schemaNamn &&
-              (x.tableName ?? "").trim() === namn
+              (x.tableName ?? "").trim() === namn,
           );
         })()
       : [];
@@ -611,44 +739,46 @@ export default function FormView({
             </Box>
             <Box sx={{ display: "flex", alignItems: "center" }}>
               {kind === "metadata" ? (
-                <Tooltip title="Visa attributtabell">
+                <>
+                  <Tooltip title="Visa attributtabell">
+                    <IconButton
+                      onClick={() => {
+                        setColumnDialogOpen(true);
+                      }}
+                      color="primary"
+                    >
+                      <TableView />
+                    </IconButton>
+                  </Tooltip>
+
+                  {otherTarget ? (
+                    <Tooltip title={otherTargetLabel}>
+                      <IconButton
+                        onClick={() => {
+                          navigate(otherTarget, {
+                            state: { backTo: backToFinal },
+                          });
+                        }}
+                        color="primary"
+                        sx={{ ml: 1 }}
+                      >
+                        <OpenInNew />
+                      </IconButton>
+                    </Tooltip>
+                  ) : null}
+                </>
+              ) : null}
+              {kind === "managementplan" && otherTarget ? (
+                <Tooltip title={otherTargetLabel}>
                   <IconButton
                     onClick={() => {
-                      setTableViewClicked(true);
-                      setColumnDialogOpen(true);
+                      navigate(otherTarget, {
+                        state: { backTo: backToFinal },
+                      });
                     }}
                     color="primary"
-                    sx={{
-                      ml: 2,
-                      border: "1px solid",
-                      borderColor: "primary.main",
-                      bgcolor: "rgba(25, 118, 210, 0.08)",
-                      animation: tableViewClicked
-                        ? "none"
-                        : "tableViewPulse 1.6s ease-in-out infinite",
-                      "@keyframes tableViewPulse": {
-                        "0%": {
-                          transform: "scale(1)",
-                          boxShadow: "0 0 0 0 rgba(25, 118, 210, 0.45)",
-                        },
-                        "65%": {
-                          transform: "scale(1.06)",
-                          boxShadow: "0 0 0 10px rgba(25, 118, 210, 0)",
-                        },
-                        "100%": {
-                          transform: "scale(1)",
-                          boxShadow: "0 0 0 0 rgba(25, 118, 210, 0)",
-                        },
-                      },
-                      "@media (prefers-reduced-motion: reduce)": {
-                        animation: "none",
-                      },
-                      "&:hover": {
-                        bgcolor: "rgba(25, 118, 210, 0.14)",
-                      },
-                    }}
                   >
-                    <TableView />
+                    <OpenInNew />
                   </IconButton>
                 </Tooltip>
               ) : null}
@@ -668,7 +798,7 @@ export default function FormView({
                     }
                   }}
                   color={linkCopied ? "primary" : "primary"}
-                  sx={{ ml: 2 }}
+                  sx={{ ml: 1 }}
                 >
                   {linkCopied ? <CheckCircleOutlineOutlinedIcon /> : <Link />}
                 </IconButton>
@@ -676,14 +806,18 @@ export default function FormView({
 
               <Tooltip title="Ladda ner som PDF">
                 <IconButton
-                  onClick={() =>
-                    generatePDF(title, item, fieldLabels, {
-                      subtitle:
-                        kind === "metadata" && derivedManagementPlanTitle
+                  onClick={() => {
+                    if (kind === "metadata") {
+                      generateMetadataPDF(title, item as Metadata, {
+                        subtitle: derivedManagementPlanTitle
                           ? `Förvaltningsplan: ${derivedManagementPlanTitle}`
                           : undefined,
-                    })
-                  }
+                      });
+                      return;
+                    }
+
+                    generateManagementPlanPDF(title, item as ManagementPlan);
+                  }}
                   color="primary"
                   sx={{ ml: 1 }}
                 >
@@ -699,19 +833,23 @@ export default function FormView({
             flexWrap="wrap"
             useFlexGap
           >
-            {"kategori" in item && (item as any).kategori ? (
+            {hasProp(item, "kategori") &&
+            typeof item.kategori === "string" &&
+            item.kategori.trim() ? (
               <Chip
-                label={(item as any).kategori}
+                label={item.kategori}
                 size="small"
                 color="primary"
                 variant="outlined"
               />
             ) : null}
-            {"status" in item && (item as any).status ? (
+            {hasProp(item, "status") &&
+            typeof item.status === "string" &&
+            item.status.trim() ? (
               <Chip
-                label={(item as any).status}
+                label={item.status}
                 size="small"
-                color={statusChipColor((item as any).status)}
+                color={statusChipColor((item as unknown as Metadata).status)}
                 variant="outlined"
               />
             ) : null}

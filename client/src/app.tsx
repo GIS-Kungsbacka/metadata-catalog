@@ -26,13 +26,15 @@ function readInitialMode(): "light" | "dark" {
   try {
     const saved = localStorage.getItem(COLOR_MODE_KEY);
     if (saved === "light" || saved === "dark") return saved;
-  } catch {}
+  } catch {
+    // Ignore errors
+  }
   return "light";
 }
 
 function App() {
   const [mode, setMode] = React.useState<"light" | "dark">(() =>
-    readInitialMode()
+    readInitialMode(),
   );
 
   const toggleMode = React.useCallback(() => {
@@ -40,7 +42,9 @@ function App() {
       const next = prev === "light" ? "dark" : "light";
       try {
         localStorage.setItem(COLOR_MODE_KEY, next);
-      } catch {}
+      } catch {
+        // Ignore errors
+      }
       return next;
     });
   }, []);
@@ -76,9 +80,9 @@ function App() {
         {
           // Align router root with Vite base (e.g. /geodata/)
           basename: import.meta.env.BASE_URL,
-        }
+        },
       ),
-    [mode, toggleMode]
+    [mode, toggleMode],
   );
 
   return (

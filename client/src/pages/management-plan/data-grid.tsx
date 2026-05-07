@@ -81,7 +81,7 @@ function readGridPreferences(): {
       return {
         ...fallback,
         columnVisibilityModel: enforceHiddenColumns(
-          parsed as Record<string, boolean>
+          parsed as Record<string, boolean>,
         ),
       };
     }
@@ -125,7 +125,9 @@ function writeGridPreferences(prefs: {
 
   try {
     localStorage.setItem(COLUMN_VISIBILITY_STORAGE_KEY, JSON.stringify(store));
-  } catch {}
+  } catch {
+    // Ignore errors
+  }
 }
 
 function formatDateOnly(value: unknown): string {
@@ -191,7 +193,6 @@ const defaultColumnVisibility = {
 
 const ColumnsToolbarButton = React.forwardRef(function ColumnsToolbarButton(
   props: React.ComponentProps<typeof ToolbarButton>,
-  _ref
 ) {
   return (
     <Tooltip title="Kolumner">
@@ -210,12 +211,12 @@ function ManagementPlanToolbar({
   onDensityChange: (d: GridDensity) => void;
 }) {
   const [exportAnchor, setExportAnchor] = React.useState<null | HTMLElement>(
-    null
+    null,
   );
   const exportOpen = Boolean(exportAnchor);
 
   const [densityAnchor, setDensityAnchor] = React.useState<null | HTMLElement>(
-    null
+    null,
   );
   const densityOpen = Boolean(densityAnchor);
 
@@ -264,12 +265,12 @@ function ManagementPlanToolbar({
                     d === "compact"
                       ? "Kompakt"
                       : d === "standard"
-                      ? "Standard"
-                      : "Komfortabelt"
+                        ? "Standard"
+                        : "Komfortabelt"
                   }
                 />
               </MenuItem>
-            )
+            ),
           )}
         </Menu>
 
@@ -432,7 +433,7 @@ export default function ManagementPlanGrid({
       flex: 0.8,
     },
     // Most datasets have short "namn" values, so keep it compact.
-    { field: "namn", headerName: "Namn", minWidth: 140, flex: 0.6 },
+    { field: "namn", headerName: "Namn", minWidth: 150, flex: 1 },
     { field: "titel", headerName: "Titel", minWidth: 140, flex: 0.6 },
     { field: "schemaNamn", headerName: "Schema", minWidth: 140, flex: 0.7 },
     {
@@ -599,12 +600,12 @@ export default function ManagementPlanGrid({
   const setColumnVisibilityModel = React.useCallback(
     (next: Record<string, boolean>) =>
       setGridPrefs((p) => ({ ...p, columnVisibilityModel: next })),
-    []
+    [],
   );
 
   const setDensity = React.useCallback(
     (next: GridDensity) => setGridPrefs((p) => ({ ...p, density: next })),
-    []
+    [],
   );
 
   const [paginationModel, setPaginationModel] =
@@ -612,7 +613,7 @@ export default function ManagementPlanGrid({
 
   React.useEffect(() => {
     setPaginationModel((m) =>
-      m.pageSize === pageSize ? m : { ...m, pageSize }
+      m.pageSize === pageSize ? m : { ...m, pageSize },
     );
   }, [pageSize]);
 
@@ -725,10 +726,10 @@ export default function ManagementPlanGrid({
               params.row.schemaNamn && params.row.namn
                 ? `/managementplan/${encodeURIComponent(
                     `${String(params.row.schemaNamn).trim()}_${String(
-                      params.row.namn
-                    ).trim()}`
+                      params.row.namn,
+                    ).trim()}`,
                   )}`
-                : `/managementplan`
+                : `/managementplan`,
             )
           }
           pageSizeOptions={[10, 25, 50]}
@@ -737,7 +738,7 @@ export default function ManagementPlanGrid({
           onPaginationModelChange={(m) => {
             setPaginationModel(m);
             setGridPrefs((p) =>
-              p.pageSize === m.pageSize ? p : { ...p, pageSize: m.pageSize }
+              p.pageSize === m.pageSize ? p : { ...p, pageSize: m.pageSize },
             );
           }}
           density={density}

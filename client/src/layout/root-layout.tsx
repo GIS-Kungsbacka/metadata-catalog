@@ -71,7 +71,9 @@ export function RootLayout({ mode, onToggleMode }: RootLayoutProps) {
     setOpen(next);
     try {
       localStorage.setItem(DRAWER_OPEN_KEY, String(next));
-    } catch {}
+    } catch {
+      // Ignore errors
+    }
   }, []);
 
   const drawerWidth = open ? DRAWER_WIDTH_OPEN : DRAWER_WIDTH_CLOSED;
