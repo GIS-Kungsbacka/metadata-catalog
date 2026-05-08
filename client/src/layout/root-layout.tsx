@@ -224,7 +224,7 @@ export function RootLayout({ mode, onToggleMode }: RootLayoutProps) {
 
           <ListItemButton
             component={NavLink}
-            to="/managementplan"
+            to="/forvaltningsplan"
             sx={{
               mx: 1,
               mt: 0.5,

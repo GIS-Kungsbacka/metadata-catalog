@@ -697,8 +697,8 @@ export default function MetadataGrid({ mode }: { mode: "light" | "dark" }) {
           Tillbaka
         </Button>
         <Typography variant="body2" sx={{ fontWeight: 600, ml: "auto" }}>
-          Klicka på en rad för att se detaljer. Sök, filtrera, visa/dölj
-          kolumner, exportera tabellen till CSV.
+          Klicka på en rad för att se fler detaljer. Du kan även söka, filtrera,
+          visa/dölja kolumner och exportera tabellen till CSV.
         </Typography>
         {selectedKategori ? (
           <Chip

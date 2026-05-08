@@ -67,11 +67,11 @@ function App() {
                 element: <FormView kind="metadata" />,
               },
               {
-                path: "managementplan",
+                path: "forvaltningsplan",
                 element: <ManagementPlanGrid mode={mode} />,
               },
               {
-                path: "managementplan/:schemaNamnNamn",
+                path: "forvaltningsplan/:schemaNamnNamn",
                 element: <FormView kind="managementplan" />,
               },
             ],

@@ -474,7 +474,8 @@ export default function FormView({
       ? ((location.state as unknown as { backTo?: string }).backTo as string)
       : undefined;
 
-  const baseBackTo = kind === "metadata" ? "/metadata/list" : "/managementplan";
+  const baseBackTo =
+    kind === "metadata" ? "/metadata/list" : "/forvaltningsplan";
   const backTo = backToFromState ?? baseBackTo;
   const heading = kind === "metadata" ? "Metadata" : "Förvaltningsplan";
 
@@ -656,7 +657,7 @@ export default function FormView({
 
       const combined = makeCombinedKey(match.schemaNamn, match.namn);
       return combined
-        ? `/managementplan/${encodeURIComponent(combined)}`
+        ? `/forvaltningsplan/${encodeURIComponent(combined)}`
         : undefined;
     }
 

@@ -695,8 +695,8 @@ export default function ManagementPlanGrid({
           variant="body2"
           sx={{ fontWeight: 600, textAlign: "center" }}
         >
-          Klicka på en rad för att se detaljer. Sök, filtrera, visa/dölj
-          kolumner, exportera tabellen till CSV.
+          Klicka på en rad för att se fler detaljer. Du kan även söka, filtrera,
+          visa/dölja kolumner och exportera tabellen till CSV.
         </Typography>
         <Box sx={{ width: 110 }} />
       </Box>
@@ -724,12 +724,12 @@ export default function ManagementPlanGrid({
           onRowClick={(params) =>
             navigate(
               params.row.schemaNamn && params.row.namn
-                ? `/managementplan/${encodeURIComponent(
+                ? `/forvaltningsplan/${encodeURIComponent(
                     `${String(params.row.schemaNamn).trim()}_${String(
                       params.row.namn,
                     ).trim()}`,
                   )}`
-                : `/managementplan`,
+                : `/forvaltningsplan`,
             )
           }
           pageSizeOptions={[10, 25, 50]}
