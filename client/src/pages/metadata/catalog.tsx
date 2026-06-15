@@ -31,6 +31,7 @@ import { useMetadata } from "../../hooks/useMetadata";
 import { useClientConfig } from "../../config/client-config";
 import { publicAssetUrl } from "../../utils/public-asset-url";
 import type { Metadata } from "../../types/metadata";
+import { MetadataViewSwitcher } from "./metadata-view-switcher";
 
 type Category = {
   title: string;
@@ -138,7 +139,7 @@ export default function MetadataCatalog() {
   const config = useClientConfig();
   const defaultCategoryImgSrc = React.useMemo(
     () => publicAssetUrl(config.defaultCategoryImage || ""),
-    [config.defaultCategoryImage]
+    [config.defaultCategoryImage],
   );
 
   const categoryImgSrc = React.useCallback(
@@ -147,7 +148,7 @@ export default function MetadataCatalog() {
         ? publicAssetUrl(config.categoryImages[categoryTitle])
         : defaultCategoryImgSrc;
     },
-    [config.categoryImages, defaultCategoryImgSrc]
+    [config.categoryImages, defaultCategoryImgSrc],
   );
 
   const allCategoryImageUrls = React.useMemo(() => {
@@ -244,6 +245,9 @@ export default function MetadataCatalog() {
             },
           }}
         />
+        <Box sx={{ display: "flex", justifyContent: "center", mb: 1 }}>
+          <MetadataViewSwitcher view="catalog" />
+        </Box>
       </Box>
 
       <Dialog
@@ -325,7 +329,7 @@ export default function MetadataCatalog() {
               <CardActionArea
                 onClick={() =>
                   navigate(
-                    `/metadata/list?kategori=${encodeURIComponent(c.title)}`
+                    `/metadata/list?kategori=${encodeURIComponent(c.title)}`,
                   )
                 }
                 sx={{
@@ -428,8 +432,8 @@ export default function MetadataCatalog() {
                             ? "…"
                             : String(
                                 query.trim()
-                                  ? matchesByKategori.get(c.title) ?? 0
-                                  : countsByKategori.get(c.title) ?? 0
+                                  ? (matchesByKategori.get(c.title) ?? 0)
+                                  : (countsByKategori.get(c.title) ?? 0),
                               )
                         }
                       />

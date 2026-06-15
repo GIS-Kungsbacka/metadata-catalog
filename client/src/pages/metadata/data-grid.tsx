@@ -48,6 +48,7 @@ import { useManagementPlan } from "../../hooks/useManagementPlan";
 import type { Metadata } from "../../types/metadata";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { statusChipColor } from "../../utils/status-chip";
+import { MetadataViewSwitcher } from "./metadata-view-switcher";
 
 const COLUMN_VISIBILITY_STORAGE_KEY = "metadata-column-visibility";
 
@@ -688,25 +689,36 @@ export default function MetadataGrid({ mode }: { mode: "light" | "dark" }) {
         mb={2}
         sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}
       >
-        <Button
-          variant="text"
-          startIcon={<ArrowBackOutlinedIcon />}
-          onClick={() => navigate("/metadata")}
-          sx={{ textTransform: "capitalize" }}
+        {selectedKategori ? (
+          <Button
+            variant="text"
+            startIcon={<ArrowBackOutlinedIcon />}
+            onClick={() => navigate("/metadata")}
+            sx={{ textTransform: "capitalize" }}
+          >
+            Tillbaka
+          </Button>
+        ) : (
+          <MetadataViewSwitcher view="all" />
+        )}
+        <Typography
+          variant="body2"
+          sx={{ fontWeight: 600, ml: selectedKategori ? "auto" : 0, flex: 1 }}
         >
-          Tillbaka
-        </Button>
-        <Typography variant="body2" sx={{ fontWeight: 600, ml: "auto" }}>
           Klicka på en rad för att se fler detaljer. Du kan även söka, filtrera,
           visa/dölja kolumner och exportera tabellen till CSV.
         </Typography>
         {selectedKategori ? (
           <Chip
             label={`Ämnesområde: ${selectedKategori} (${rows.length})`}
-            sx={{ ml: "auto" }}
             variant="outlined"
           />
-        ) : null}
+        ) : (
+          <Chip
+            label={`Alla datamängder (${rows.length})`}
+            variant="outlined"
+          />
+        )}
       </Box>
 
       <Paper
