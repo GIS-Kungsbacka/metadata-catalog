@@ -30,8 +30,11 @@ import { useNavigate } from "react-router-dom";
 import { useMetadata } from "../../hooks/useMetadata";
 import { useClientConfig } from "../../config/client-config";
 import { publicAssetUrl } from "../../utils/public-asset-url";
-import type { Metadata } from "../../types/metadata";
 import { MetadataViewSwitcher } from "./metadata-view-switcher";
+import {
+  metadataMatchesQuery,
+  normalizeSearchQuery,
+} from "../../utils/metadata-search";
 
 type Category = {
   title: string;
@@ -60,20 +63,17 @@ const CATEGORIES: Category[] = [
 ];
 
 function normalize(v: string) {
-  return v.toLowerCase().trim();
+  return normalizeSearchQuery(v);
 }
 
-function metadataToSearchText(it: Metadata) {
-  const parts: string[] = [];
-  for (const v of Object.values(it)) {
-    if (v == null) continue;
-    if (Array.isArray(v)) {
-      parts.push(v.filter(Boolean).join(" "));
-      continue;
-    }
-    parts.push(String(v));
-  }
-  return parts.join(" ");
+function toListUrl(options?: { kategori?: string; q?: string }) {
+  const params = new URLSearchParams();
+  const kategori = (options?.kategori ?? "").trim();
+  const q = (options?.q ?? "").trim();
+  if (kategori) params.set("kategori", kategori);
+  if (q) params.set("q", q);
+  const qs = params.toString();
+  return qs ? `/metadata/list?${qs}` : "/metadata/list";
 }
 
 type ImageLoadState = "idle" | "loading" | "loaded" | "error";
@@ -178,8 +178,7 @@ export default function MetadataCatalog() {
     for (const it of items) {
       const k = (it.kategori ?? "").trim();
       if (!k) continue;
-      const hay = normalize(metadataToSearchText(it));
-      if (!hay.includes(q)) continue;
+      if (!metadataMatchesQuery(it, query)) continue;
       map.set(k, (map.get(k) ?? 0) + 1);
     }
 
@@ -198,8 +197,8 @@ export default function MetadataCatalog() {
   return (
     <Container maxWidth="xl" sx={{ mt: { xs: 1, md: 4 }, mb: 6 }}>
       <Box sx={{ mb: 2, textAlign: "center" }}>
-        <Typography variant="h4" sx={{ fontWeight: 800, mb: 1 }}>
-          Geodataavdelningens metadatakatalog
+        <Typography variant="h4" sx={{ fontWeight: 800, mb: 1, mr: 1 }}>
+          Metadatakatalog för geodata
         </Typography>
         <Typography variant="body2" sx={{ mb: 5 }}>
           Sök efter geodatamängder...
@@ -207,6 +206,13 @@ export default function MetadataCatalog() {
         <TextField
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key !== "Enter") return;
+            const q = query.trim();
+            if (!q) return;
+            e.preventDefault();
+            navigate(toListUrl({ q }));
+          }}
           placeholder="Sök…"
           size="small"
           fullWidth
@@ -329,7 +335,10 @@ export default function MetadataCatalog() {
               <CardActionArea
                 onClick={() =>
                   navigate(
-                    `/metadata/list?kategori=${encodeURIComponent(c.title)}`,
+                    toListUrl({
+                      kategori: c.title,
+                      q: query.trim() || undefined,
+                    }),
                   )
                 }
                 sx={{

@@ -35,7 +35,6 @@ import {
   OpenInNew,
 } from "@mui/icons-material";
 import CheckCircleOutlineOutlinedIcon from "@mui/icons-material/CheckCircleOutlineOutlined";
-import jsPDF from "jspdf";
 import {
   useMetadata,
   useMetadataColumnDescription,
@@ -44,6 +43,17 @@ import { useManagementPlan } from "../hooks/useManagementPlan";
 import type { Metadata } from "../types/metadata";
 import type { ManagementPlan } from "../types/management-plan";
 import { statusChipColor } from "../utils/status-chip";
+import { FieldLabelWithHelp } from "../components/field-label-with-help";
+import {
+  managementPlanFieldHelp,
+  metadataFieldHelp,
+} from "../utils/field-help";
+import {
+  generateManagementPlanPDF,
+  generateMetadataPDF,
+  managementPlanSections,
+  metadataSections,
+} from "../utils/pdf-export";
 
 const metadataFieldLabels: Partial<Record<keyof Metadata, string>> = {
   namn: "Namn",
@@ -113,120 +123,6 @@ const managementPlanFieldLabels: Partial<Record<keyof ManagementPlan, string>> =
     andradAv: "Ändrad av",
   };
 
-const metadataSections: Array<{
-  title: string;
-  keys: (keyof Metadata)[];
-}> = [
-  {
-    title: "Grundläggande identitet",
-    keys: ["schemaNamn", "namn", "metaDataVersion"],
-  },
-  {
-    title: "Beskrivning och syfte",
-    keys: ["beskrivning", "syfte", "kategori", "nyckelOrd", "projekt"],
-  },
-  {
-    title: "Ursprung och datakälla",
-    keys: ["dataKallaTyp", "ursprung", "metod", "metodUrl"],
-  },
-  {
-    title: "Geografisk och detaljnivå",
-    keys: ["geografiskBegransning", "skalniva"],
-  },
-  {
-    title: "Tidsinformation",
-    keys: [
-      "skapelseDatum",
-      "tidsperiodStartdatum",
-      "tidsperiodSlutdatum",
-      "tidsUpplosning",
-    ],
-  },
-  {
-    title: "Kvalitet och uppdatering",
-    keys: ["uppdateringsFrekvens", "fullstandighet"],
-  },
-  {
-    title: "Åtkomst, licens och säkerhet",
-    keys: [
-      "anvandarBegransningLicens",
-      "anvandarBegransningLicensText",
-      "sakerhetsKlass",
-    ],
-  },
-  {
-    title: "Struktur och relationer",
-    keys: ["kolumnBeskrivningUrl", "relateradeResurser"],
-  },
-  {
-    title: "Status",
-    keys: [
-      "arendeNummerOpenE",
-      "bestallareNamn",
-      "bestallareEpost",
-      "handlaggare",
-      "status",
-    ],
-  },
-];
-
-const managementPlanSections: Array<{
-  title: string;
-  keys: (keyof ManagementPlan)[];
-}> = [
-  {
-    title: "Grundläggande identitet",
-    keys: ["titel", "namn", "schemaNamn", "forvaltningsplanVersion"],
-  },
-  {
-    title: "Ansvar och roller",
-    keys: [
-      "dataAgare",
-      "dataForvaltare",
-      "dataAdministrator",
-      "dataKonsument",
-      "handlaggare",
-    ],
-  },
-  {
-    title: "Publicering och åtkomst",
-    keys: [
-      "publicerad",
-      "oppnaData",
-      "atkomst",
-      "integration",
-      "redigeringsKalla",
-    ],
-  },
-  {
-    title: "Dokumentation och information",
-    keys: ["dokumentSkUrl", "dokuementInfoUrl", "ovrigInformation"],
-  },
-  {
-    title: "Livscykel och arkivering",
-    keys: [
-      "kritiskDatamangd",
-      "arkivering",
-      "arkiveringTidpunkt",
-      "skapadTidPunkt",
-      "skapadAv",
-      "andradTidPunkt",
-      "andradAv",
-    ],
-  },
-  {
-    title: "Status",
-    keys: [
-      "arendeNummberOpenE",
-      "bestallareNamn",
-      "bestallareEpost",
-      "sakerhetsklass",
-      "datakallaTyp",
-      "status",
-    ],
-  },
-];
-
 function formatDateOnly(value: unknown): string | undefined {
   if (value === null || value === undefined) return undefined;
 
@@ -270,136 +166,6 @@ function hasProp<K extends string>(
   key: K,
 ): value is Record<K, unknown> {
   return typeof value === "object" && value !== null && key in value;
-}
-
-function sanitizeFilenamePart(input: string): string {
-  const cleaned = input.trim().replace(/[^a-z0-9\-_]+/gi, "_");
-  return cleaned.replace(/^_+|_+$/g, "") || "export";
-}
-
-function createPdfTextWriter(doc: jsPDF) {
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const pageHeight = doc.internal.pageSize.getHeight();
-  const margin = 20;
-  const maxWidth = pageWidth - 2 * margin;
-  let yPosition = margin;
-
-  const ensurePageSpace = () => {
-    if (yPosition > pageHeight - margin) {
-      doc.addPage();
-      yPosition = margin;
-    }
-  };
-
-  const addText = (text: string, fontSize: number, isBold = false) => {
-    doc.setFontSize(fontSize);
-    doc.setFont("helvetica", isBold ? "bold" : "normal");
-    const lines = doc.splitTextToSize(text, maxWidth);
-    doc.text(lines, margin, yPosition);
-    yPosition += lines.length * (fontSize * 0.4) + 5;
-    ensurePageSpace();
-  };
-
-  const addSpacer = (height = 5) => {
-    yPosition += height;
-    ensurePageSpace();
-  };
-
-  return { addText, addSpacer };
-}
-
-function generateMetadataPDF(
-  title: string,
-  metadata: Metadata,
-  options?: { subtitle?: string },
-) {
-  const doc = new jsPDF();
-  const { addText, addSpacer } = createPdfTextWriter(doc);
-
-  // Title
-  addText(title || "Detaljer", 18, true);
-  addSpacer(5);
-
-  // Add chips info if available
-  const chipsInfo: string[] = [];
-  if (metadata.kategori)
-    chipsInfo.push(`Kategori: ${String(metadata.kategori)}`);
-  if (metadata.status) chipsInfo.push(`Status: ${String(metadata.status)}`);
-  if (chipsInfo.length > 0) {
-    addText(chipsInfo.join(" | "), 12);
-    addSpacer(5);
-  }
-
-  if (options?.subtitle) {
-    addText(options.subtitle, 12);
-    addSpacer(3);
-  }
-
-  addSpacer(5);
-
-  for (const section of metadataSections) {
-    addText(section.title, 14, true);
-    addSpacer(3);
-
-    for (const key of section.keys) {
-      const label = metadataFieldLabels[key] ?? String(key);
-      const value = formatValue(metadata[key], String(key));
-      addText(`${label}: ${value}`, 11);
-    }
-
-    addSpacer(5);
-  }
-
-  // Generate filename
-  const keySuffix =
-    `${(metadata.schemaNamn ?? "").trim()}_${(metadata.namn ?? "").trim()}`.trim() ||
-    title ||
-    "Detaljer";
-  const filename = `${sanitizeFilenamePart(keySuffix)}_${
-    new Date().toISOString().split("T")[0]
-  }.pdf`;
-
-  // Save the PDF
-  doc.save(filename);
-}
-
-function generateManagementPlanPDF(title: string, plan: ManagementPlan) {
-  const doc = new jsPDF();
-  const { addText, addSpacer } = createPdfTextWriter(doc);
-
-  addText(title || "Detaljer", 18, true);
-  addSpacer(5);
-
-  const chipsInfo: string[] = [];
-  if (plan.status) chipsInfo.push(`Status: ${String(plan.status)}`);
-  if (chipsInfo.length > 0) {
-    addText(chipsInfo.join(" | "), 12);
-    addSpacer(5);
-  }
-
-  addSpacer(5);
-
-  for (const section of managementPlanSections) {
-    addText(section.title, 14, true);
-    addSpacer(3);
-
-    for (const key of section.keys) {
-      const label = managementPlanFieldLabels[key] ?? String(key);
-      const value = formatValue(plan[key], String(key));
-      addText(`${label}: ${value}`, 11);
-    }
-
-    addSpacer(5);
-  }
-
-  const keySuffix =
-    `${(plan.schemaNamn ?? "").trim()}_${(plan.namn ?? "").trim()}`.trim() ||
-    title ||
-    "Detaljer";
-  const filename = `${sanitizeFilenamePart(keySuffix)}_${
-    new Date().toISOString().split("T")[0]
-  }.pdf`;
-  doc.save(filename);
 }
 
 export default function FormView({
@@ -571,14 +337,7 @@ export default function FormView({
 
     return (
       <Grid size={{ xs: 12, sm: 4 }} key={String(key)}>
-        <Typography
-          variant="caption"
-          color="text.secondary"
-          display="block"
-          sx={{ fontWeight: 900 }}
-        >
-          {label}
-        </Typography>
+        <FieldLabelWithHelp label={label} helpText={metadataFieldHelp[key]} />
         <Typography variant="body1" sx={{ wordBreak: "break-word" }}>
           {display || "-"}
         </Typography>
@@ -595,14 +354,10 @@ export default function FormView({
 
     return (
       <Grid size={{ xs: 12, sm: 4 }} key={String(key)}>
-        <Typography
-          variant="caption"
-          color="text.secondary"
-          display="block"
-          sx={{ fontWeight: 900 }}
-        >
-          {label}
-        </Typography>
+        <FieldLabelWithHelp
+          label={label}
+          helpText={managementPlanFieldHelp[key]}
+        />
         <Typography variant="body1" sx={{ wordBreak: "break-word" }}>
           {display || "-"}
         </Typography>

@@ -3,6 +3,7 @@ import { NavLink, Outlet } from "react-router-dom";
 import {
   Avatar,
   Box,
+  CircularProgress,
   Divider,
   Drawer,
   IconButton,
@@ -10,6 +11,8 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  Menu,
+  MenuItem,
   Paper,
   Stack,
   Tooltip,
@@ -22,11 +25,18 @@ import StorageOutlinedIcon from "@mui/icons-material/StorageOutlined";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
 import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
+import PictureAsPdfOutlinedIcon from "@mui/icons-material/PictureAsPdfOutlined";
 
 import { getInitials, useAuth } from "../hooks/useAuth";
+import { useMetadata } from "../hooks/useMetadata";
+import { useManagementPlan } from "../hooks/useManagementPlan";
 import { SquareSpinnerComponent } from "../components/square-progress";
 import { useClientConfig } from "../config/client-config";
 import { publicAssetUrl } from "../utils/public-asset-url";
+import {
+  generateAllManagementPlanPDF,
+  generateAllMetadataPDF,
+} from "../utils/pdf-export";
 
 const DRAWER_OPEN_KEY = "app-drawer-open";
 const DRAWER_WIDTH_OPEN = 260;
@@ -59,6 +69,53 @@ export function RootLayout({ mode, onToggleMode }: RootLayoutProps) {
   const [open, setOpen] = React.useState<boolean>(() => readDrawerOpen());
   const [isBootLoading, setIsBootLoading] = React.useState(true);
   const [siteLoadingMs] = React.useState<number>(() => pickSiteLoadingMs());
+  const [isPdfExporting, setIsPdfExporting] = React.useState(false);
+  const [pdfMenuAnchor, setPdfMenuAnchor] = React.useState<null | HTMLElement>(
+    null,
+  );
+
+  const metadataQuery = useMetadata();
+  const managementPlanQuery = useManagementPlan();
+
+  const metadataCount = metadataQuery.data?.length ?? 0;
+  const managementPlanCount = managementPlanQuery.data?.length ?? 0;
+  const isPdfDataLoading =
+    metadataQuery.isLoading || managementPlanQuery.isLoading;
+  const pdfMenuOpen = Boolean(pdfMenuAnchor);
+
+  const handlePdfMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setPdfMenuAnchor(event.currentTarget);
+  };
+
+  const handlePdfMenuClose = () => {
+    setPdfMenuAnchor(null);
+  };
+
+  const handleDownloadPdf = React.useCallback(
+    (kind: "metadata" | "managementplan") => {
+      handlePdfMenuClose();
+
+      const metadataItems = metadataQuery.data ?? [];
+      const managementPlanItems = managementPlanQuery.data ?? [];
+      const itemCount =
+        kind === "metadata" ? metadataItems.length : managementPlanItems.length;
+      if (itemCount === 0) return;
+
+      setIsPdfExporting(true);
+      window.setTimeout(() => {
+        try {
+          if (kind === "metadata") {
+            generateAllMetadataPDF(metadataItems);
+          } else {
+            generateAllManagementPlanPDF(managementPlanItems);
+          }
+        } finally {
+          setIsPdfExporting(false);
+        }
+      }, 0);
+    },
+    [metadataQuery.data, managementPlanQuery.data],
+  );
 
   React.useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -278,6 +335,66 @@ export function RootLayout({ mode, onToggleMode }: RootLayoutProps) {
             }}
           >
             <Stack direction="row" spacing={1.5} alignItems="center">
+              <Tooltip title="Ladda ner som PDF">
+                <span>
+                  <IconButton
+                    onClick={handlePdfMenuOpen}
+                    color="primary"
+                    disabled={isPdfExporting || isPdfDataLoading}
+                    aria-label="Ladda ner som PDF"
+                    aria-controls={pdfMenuOpen ? "pdf-export-menu" : undefined}
+                    aria-haspopup="true"
+                    aria-expanded={pdfMenuOpen ? "true" : undefined}
+                  >
+                    {isPdfExporting || isPdfDataLoading ? (
+                      <CircularProgress size={22} color="inherit" />
+                    ) : (
+                      <PictureAsPdfOutlinedIcon />
+                    )}
+                  </IconButton>
+                </span>
+              </Tooltip>
+              <Menu
+                id="pdf-export-menu"
+                anchorEl={pdfMenuAnchor}
+                open={pdfMenuOpen}
+                onClose={handlePdfMenuClose}
+                anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+                transformOrigin={{ vertical: "top", horizontal: "right" }}
+              >
+                <MenuItem
+                  onClick={() => handleDownloadPdf("metadata")}
+                  disabled={metadataCount === 0}
+                >
+                  <ListItemIcon sx={{ minWidth: 36 }}>
+                    <StorageOutlinedIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary="Metadatakatalog"
+                    secondary={
+                      metadataCount === 0
+                        ? "Inga objekt"
+                        : `${metadataCount} objekt`
+                    }
+                  />
+                </MenuItem>
+                <MenuItem
+                  onClick={() => handleDownloadPdf("managementplan")}
+                  disabled={managementPlanCount === 0}
+                >
+                  <ListItemIcon sx={{ minWidth: 36 }}>
+                    <DescriptionOutlinedIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary="Förvaltningsplan"
+                    secondary={
+                      managementPlanCount === 0
+                        ? "Inga objekt"
+                        : `${managementPlanCount} objekt`
+                    }
+                  />
+                </MenuItem>
+              </Menu>
               <Tooltip
                 title={
                   mode === "dark"

@@ -49,6 +49,10 @@ import type { Metadata } from "../../types/metadata";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { statusChipColor } from "../../utils/status-chip";
 import { MetadataViewSwitcher } from "./metadata-view-switcher";
+import {
+  metadataMatchesQuery,
+  normalizeSearchQuery,
+} from "../../utils/metadata-search";
 
 const COLUMN_VISIBILITY_STORAGE_KEY = "metadata-column-visibility";
 
@@ -392,9 +396,10 @@ function renderStringArray(value: unknown) {
 export default function MetadataGrid({ mode }: { mode: "light" | "dark" }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const selectedKategori = (searchParams.get("kategori") ?? "").trim();
   const selectedKategoriLower = selectedKategori.toLowerCase();
+  const searchQuery = (searchParams.get("q") ?? "").trim();
 
   const {
     data: items = [],
@@ -453,6 +458,29 @@ export default function MetadataGrid({ mode }: { mode: "light" | "dark" }) {
     quickFilterValues: [],
     quickFilterExcludeHiddenColumns: false,
   }));
+
+  const filteredItems = React.useMemo(() => {
+    let next = items;
+
+    if (selectedKategori) {
+      next = next.filter(
+        (i) =>
+          normalizeSearchQuery(i.kategori ?? "") === selectedKategoriLower,
+      );
+    }
+
+    if (searchQuery) {
+      next = next.filter((i) => metadataMatchesQuery(i, searchQuery));
+    }
+
+    return next;
+  }, [items, searchQuery, selectedKategori, selectedKategoriLower]);
+
+  const clearSearchQuery = React.useCallback(() => {
+    const next = new URLSearchParams(searchParams);
+    next.delete("q");
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   if (isLoading) {
     return (
@@ -675,12 +703,6 @@ export default function MetadataGrid({ mode }: { mode: "light" | "dark" }) {
     },
   ];
 
-  const filteredItems = selectedKategori
-    ? items.filter(
-        (i) => (i.kategori ?? "").toLowerCase() === selectedKategoriLower,
-      )
-    : items;
-
   const rows = filteredItems.map((item) => ({ ...item, id: item.gid }));
 
   return (
@@ -703,7 +725,7 @@ export default function MetadataGrid({ mode }: { mode: "light" | "dark" }) {
         )}
         <Typography
           variant="body2"
-          sx={{ fontWeight: 600, ml: selectedKategori ? "auto" : 0, flex: 1 }}
+          sx={{ fontWeight: 600, ml: selectedKategori ? "auto" : 4, flex: 1 }}
         >
           Klicka på en rad för att se fler detaljer. Du kan även söka, filtrera,
           visa/dölja kolumner och exportera tabellen till CSV.
@@ -719,6 +741,13 @@ export default function MetadataGrid({ mode }: { mode: "light" | "dark" }) {
             variant="outlined"
           />
         )}
+        {searchQuery ? (
+          <Chip
+            label={`Sökning: ${searchQuery}`}
+            variant="outlined"
+            onDelete={clearSearchQuery}
+          />
+        ) : null}
       </Box>
 
       <Paper
