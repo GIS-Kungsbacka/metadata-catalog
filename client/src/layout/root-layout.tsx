@@ -335,7 +335,7 @@ export function RootLayout({ mode, onToggleMode }: RootLayoutProps) {
             }}
           >
             <Stack direction="row" spacing={1.5} alignItems="center">
-              <Tooltip title="Ladda ner som PDF">
+              <Tooltip title="Ladda ner alla objekt som PDF">
                 <span>
                   <IconButton
                     onClick={handlePdfMenuOpen}
