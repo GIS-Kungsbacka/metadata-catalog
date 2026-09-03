@@ -9,6 +9,7 @@ namespace metadata_forvaltningsplan_api.Models.Data
         public DbSet<Metadata> Metadatas => Set<Metadata>();
         public DbSet<ManagementPlan> ManagementPlans => Set<ManagementPlan>();
         public DbSet<MetadataColumnDescription> MetadataColumnDescriptions => Set<MetadataColumnDescription>();
+        public DbSet<MetadataTechDescription> MetadataTechDescriptions => Set<MetadataTechDescription>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -16,7 +17,7 @@ namespace metadata_forvaltningsplan_api.Models.Data
 
             // Configure Metadata entity
             modelBuilder.Entity<Metadata>()
-                .ToTable("etjanst_metadataspecifikation", "metadata")
+                .ToTable("metadataspecifikation", "metadata")
                 .HasKey(x => x.Gid);
             modelBuilder.Entity<Metadata>()
                 .Property(x => x.Gid).HasColumnName("gid");
@@ -81,7 +82,21 @@ namespace metadata_forvaltningsplan_api.Models.Data
             modelBuilder.Entity<Metadata>()
                 .Property(x => x.Handlaggare).HasColumnName("handlaggare");
             modelBuilder.Entity<Metadata>()
-                .Property(x => x.MetaDataVersion).HasColumnName("metadata_version");
+                .Property(x => x.MetaDataVersion).HasPrecision(6, 2).HasColumnName("metadata_version");
+            modelBuilder.Entity<Metadata>()
+                .Property(x => x.SkapadTidPunkt).HasColumnName("skapad_tidpunkt");
+            modelBuilder.Entity<Metadata>()
+                .Property(x => x.SkapadAv).HasColumnName("skapad_av");
+            modelBuilder.Entity<Metadata>()
+                .Property(x => x.AndradTidPunkt).HasColumnName("andrad_tidpunkt");
+            modelBuilder.Entity<Metadata>()
+                .Property(x => x.AndradAv).HasColumnName("andrad_av");
+            modelBuilder.Entity<Metadata>()
+                .Property(x => x.SakerhetsKlassRiktighet).HasColumnName("sakerhetsklass_riktighet");
+            modelBuilder.Entity<Metadata>()
+                .Property(x => x.SakerhetsKlassTillganglighet).HasColumnName("sakerhetsklass_tillganglighet");
+            modelBuilder.Entity<Metadata>()
+                .Property(x => x.MetaDataSpecifikationModelVersion).HasColumnName("metadataspecifikation_modelversion");
 
             // Configure MetadataColumnDescription entity
             modelBuilder.Entity<MetadataColumnDescription>()
@@ -102,7 +117,7 @@ namespace metadata_forvaltningsplan_api.Models.Data
 
             // Configure ManagementPlan entity
             modelBuilder.Entity<ManagementPlan>()
-                .ToTable("etjanst_forvaltningsplan", "metadata")
+                .ToTable("forvaltningsplan", "metadata")
                 .HasKey(x => x.Gid);
             modelBuilder.Entity<ManagementPlan>()
                 .Property(x => x.Gid).HasColumnName("gid");
@@ -159,7 +174,7 @@ namespace metadata_forvaltningsplan_api.Models.Data
             modelBuilder.Entity<ManagementPlan>()
                 .Property(x => x.Handlaggare).HasColumnName("handlaggare");
             modelBuilder.Entity<ManagementPlan>()
-                .Property(x => x.ForvaltningsplanVersion).HasColumnName("forvaltningsplan_version");
+                .Property(x => x.ForvaltningsplanVersion).HasPrecision(6, 2).HasColumnName("forvaltningsplan_version");
             modelBuilder.Entity<ManagementPlan>()
                 .Property(x => x.SkapadTidPunkt).HasColumnName("skapad_tidpunkt");
             modelBuilder.Entity<ManagementPlan>()
@@ -168,6 +183,29 @@ namespace metadata_forvaltningsplan_api.Models.Data
                 .Property(x => x.AndradTidPunkt).HasColumnName("andrad_tidpunkt");
             modelBuilder.Entity<ManagementPlan>()
                 .Property(x => x.AndradAv).HasColumnName("andrad_av");
+            modelBuilder.Entity<ManagementPlan>()
+               .Property(x => x.ForvaltningsPlanModelVersion).HasColumnName("forvaltningsplan_modelversion");
+
+            // Configure MetadataTechDescription entity
+            modelBuilder.Entity<MetadataTechDescription>()
+                .ToTable("geodata_metadata", "metadata")
+                .HasKey(x => x.Gid);
+            modelBuilder.Entity<MetadataTechDescription>()
+               .Property(x => x.Gid).HasColumnName("gid");
+            modelBuilder.Entity<MetadataTechDescription>()
+                .Property(x => x.SchemaNamn).HasColumnName("schema");
+            modelBuilder.Entity<MetadataTechDescription>()
+                .Property(x => x.Namn).HasColumnName("name");
+            modelBuilder.Entity<MetadataTechDescription>()
+                .Property(x => x.Datatype).HasColumnName("datatype");
+            modelBuilder.Entity<MetadataTechDescription>()
+                .Property(x => x.Srid).HasColumnName("srid");
+            modelBuilder.Entity<MetadataTechDescription>()
+                .Property(x => x.GeometryDimension).HasColumnName("geometry_dimension");
+            modelBuilder.Entity<MetadataTechDescription>()
+                .Property(x => x.GeometryType).HasColumnName("geometry_type");
+            modelBuilder.Entity<MetadataTechDescription>()
+                .Property(x => x.GeometryColumn).HasColumnName("geometry_column");
         }
     }
 }

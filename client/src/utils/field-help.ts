@@ -1,5 +1,6 @@
 import type { Metadata } from "../types/metadata";
 import type { ManagementPlan } from "../types/management-plan";
+import type { MetadataTechDescription } from "../types/metadata-techdescription";
 
 export const metadataFieldHelp: Partial<Record<keyof Metadata, string>> = {
   schemaNamn:
@@ -58,6 +59,21 @@ export const metadataFieldHelp: Partial<Record<keyof Metadata, string>> = {
     "Den person som ansvarar för att driva ärendet internt i organisationen.",
   status:
     "Visar var i processen datamängden befinner sig, till exempel under arbete, godkänd eller publicerad.",
+};
+
+export const metadataTechDescriptionFieldHelp: Partial<
+  Record<keyof MetadataTechDescription, string>
+> = {
+  datatype:
+    "Vilken datatyp geometrin har, till exempel geometry eller geography.",
+  srid:
+    "Koordinatsystemets identifierare (SRID), till exempel 3006 för SWEREF 99 TM.",
+  geometryDimension:
+    "Antal dimensioner i geometrin, till exempel 2 för plan geometri.",
+  geometryType:
+    "Geometrityp, till exempel POINT, LINESTRING eller POLYGON.",
+  geometryColumn:
+    "Namnet på kolumnen i tabellen som innehåller geometrin.",
 };
 
 export const managementPlanFieldHelp: Partial<

@@ -38,21 +38,26 @@ import CheckCircleOutlineOutlinedIcon from "@mui/icons-material/CheckCircleOutli
 import {
   useMetadata,
   useMetadataColumnDescription,
+  useMetadataTechDescription,
 } from "../hooks/useMetadata";
 import { useManagementPlan } from "../hooks/useManagementPlan";
 import type { Metadata } from "../types/metadata";
 import type { ManagementPlan } from "../types/management-plan";
+import type { MetadataTechDescription } from "../types/metadata-techdescription";
 import { statusChipColor } from "../utils/status-chip";
 import { FieldLabelWithHelp } from "../components/field-label-with-help";
 import {
   managementPlanFieldHelp,
   metadataFieldHelp,
+  metadataTechDescriptionFieldHelp,
 } from "../utils/field-help";
 import {
   generateManagementPlanPDF,
   generateMetadataPDF,
   managementPlanSections,
   metadataSections,
+  metadataTechDescriptionFieldLabels,
+  metadataTechDescriptionSections,
 } from "../utils/pdf-export";
 
 const metadataFieldLabels: Partial<Record<keyof Metadata, string>> = {
@@ -196,6 +201,9 @@ export default function FormView({
   });
   const metadataColumnDescriptionsQuery = useMetadataColumnDescription({
     enabled: columnDialogOpen && kind === "metadata",
+  });
+  const metadataTechDescriptionsQuery = useMetadataTechDescription({
+    enabled: keyIsValid,
   });
   const managementPlanListQuery = useManagementPlan({
     enabled: keyIsValid && kind === "managementplan",
@@ -365,6 +373,29 @@ export default function FormView({
     );
   };
 
+  const renderMetadataTechDescriptionField = (
+    key: keyof MetadataTechDescription,
+    techDescription: MetadataTechDescription | undefined,
+  ) => {
+    const label = metadataTechDescriptionFieldLabels[key];
+    if (!label) return null;
+
+    const value = techDescription?.[key];
+    const display = formatValue(value, String(key));
+
+    return (
+      <Grid size={{ xs: 12, sm: 4 }} key={String(key)}>
+        <FieldLabelWithHelp
+          label={label}
+          helpText={metadataTechDescriptionFieldHelp[key]}
+        />
+        <Typography variant="body1" sx={{ wordBreak: "break-word" }}>
+          {display || "-"}
+        </Typography>
+      </Grid>
+    );
+  };
+
   const managementPlanHeaderByName = (() => {
     const map = new Map<string, string>();
     for (const p of managementPlansQuery.data ?? []) {
@@ -449,6 +480,19 @@ export default function FormView({
         (item as ManagementPlan).namn ||
         "Förvaltningsplan";
 
+  const itemNamn =
+    kind === "metadata"
+      ? ((item as Metadata).namn ?? "").trim()
+      : ((item as ManagementPlan).namn ?? "").trim();
+  const itemSchemaNamn =
+    kind === "metadata"
+      ? ((item as Metadata).schemaNamn ?? "").trim()
+      : ((item as ManagementPlan).schemaNamn ?? "").trim();
+  const nameSchemaSubtitle =
+    itemSchemaNamn && itemNamn
+      ? `${itemSchemaNamn}:${itemNamn}`
+      : itemSchemaNamn || itemNamn;
+
   const columnDescriptionsForCurrentMetadata =
     kind === "metadata"
       ? (() => {
@@ -462,6 +506,15 @@ export default function FormView({
           );
         })()
       : [];
+
+  const techDescriptionForCurrentItem =
+    itemNamn && itemSchemaNamn
+      ? (metadataTechDescriptionsQuery.data ?? []).find(
+          (x) =>
+            norm(x.schemaNamn) === norm(itemSchemaNamn) &&
+            norm(x.namn) === norm(itemNamn),
+        )
+      : undefined;
 
   return (
     <Container maxWidth="md">
@@ -486,12 +539,22 @@ export default function FormView({
               <Typography
                 variant="h4"
                 component="h1"
-                gutterBottom
+                gutterBottom={!nameSchemaSubtitle}
                 fontWeight={600}
                 sx={{ wordBreak: "break-word" }}
               >
                 {title}
               </Typography>
+              {nameSchemaSubtitle ? (
+                <Typography
+                  variant="h6"
+                  component="h2"
+                  color="text.secondary"
+                  sx={{ wordBreak: "break-word", fontWeight: 400, mt: 0.5 }}
+                >
+                  {nameSchemaSubtitle}
+                </Typography>
+              ) : null}
             </Box>
             <Box sx={{ display: "flex", alignItems: "center" }}>
               {kind === "metadata" ? (
@@ -568,11 +631,14 @@ export default function FormView({
                         subtitle: derivedManagementPlanTitle
                           ? `Förvaltningsplan: ${derivedManagementPlanTitle}`
                           : undefined,
+                        techDescription: techDescriptionForCurrentItem,
                       });
                       return;
                     }
 
-                    generateManagementPlanPDF(title, item as ManagementPlan);
+                    generateManagementPlanPDF(title, item as ManagementPlan, {
+                      techDescription: techDescriptionForCurrentItem,
+                    });
                   }}
                   color="primary"
                   sx={{ ml: 1 }}
@@ -633,6 +699,27 @@ export default function FormView({
                   </Grid>
                 </Box>
               ))}
+              {techDescriptionForCurrentItem
+                ? metadataTechDescriptionSections.map((section) => (
+                    <Box key={section.title} sx={{ mt: 5 }}>
+                      <Typography
+                        variant="body1"
+                        sx={{ fontSize: 15, fontWeight: 800, mb: 1 }}
+                      >
+                        {section.title}
+                      </Typography>
+                      <Divider sx={{ mb: 1.5 }} />
+                      <Grid container spacing={2}>
+                        {section.keys.map((key) =>
+                          renderMetadataTechDescriptionField(
+                            key,
+                            techDescriptionForCurrentItem,
+                          ),
+                        )}
+                      </Grid>
+                    </Box>
+                  ))
+                : null}
             </Box>
           ) : (
             <Box sx={{ mt: 1 }}>
@@ -650,6 +737,27 @@ export default function FormView({
                   </Grid>
                 </Box>
               ))}
+              {techDescriptionForCurrentItem
+                ? metadataTechDescriptionSections.map((section) => (
+                    <Box key={section.title} sx={{ mt: 5 }}>
+                      <Typography
+                        variant="body1"
+                        sx={{ fontSize: 15, fontWeight: 800, mb: 1 }}
+                      >
+                        {section.title}
+                      </Typography>
+                      <Divider sx={{ mb: 1.5 }} />
+                      <Grid container spacing={2}>
+                        {section.keys.map((key) =>
+                          renderMetadataTechDescriptionField(
+                            key,
+                            techDescriptionForCurrentItem,
+                          ),
+                        )}
+                      </Grid>
+                    </Box>
+                  ))
+                : null}
             </Box>
           )}
         </CardContent>

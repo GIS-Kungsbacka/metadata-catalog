@@ -66,7 +66,14 @@ namespace metadata_forvaltningsplan_api.Data
                 KolumnBeskrivningUrl = "https://example.com/kolumner",
                 Status = "granskas",
                 Handlaggare = "Jag",
-                MetaDataVersion = "1.0"
+                SkapadTidPunkt = new DateTime(2026, 4, 14, 0, 0, 0, DateTimeKind.Utc),
+                SkapadAv = "Mig",
+                AndradTidPunkt = new DateTime(2026, 5, 14, 0, 0, 0, DateTimeKind.Utc),
+                AndradAv = "Mig",
+                MetaDataVersion = (decimal?)1.0,
+                SakerhetsKlassRiktighet = "sk0",
+                SakerhetsKlassTillganglighet = "sk1",
+                MetaDataSpecifikationModelVersion = "1.0",
             },
             new Metadata
             {
@@ -77,7 +84,7 @@ namespace metadata_forvaltningsplan_api.Data
                 SakerhetsKlass = "sk0_test",
                 DataKallaTyp = "{Extern,organisation}",
                 SchemaNamn = "sk0_schema_test",
-                Namn = "lekplatser_test_123",
+                Namn = "lekplatser_test",
                 Beskrivning = "Test beskrivning",
                 Ursprung = ["Extern", "organisation"],
                 Syfte = "Att identifiera alla lekplatser och ta en kopp kaffe",
@@ -101,7 +108,14 @@ namespace metadata_forvaltningsplan_api.Data
                 KolumnBeskrivningUrl = "https://example.com/kolumner",
                 Status = "granskas",
                 Handlaggare = "Jag",
-                MetaDataVersion = "1.0"
+                SkapadTidPunkt = new DateTime(2026, 4, 14, 0, 0, 0, DateTimeKind.Utc),
+                SkapadAv = "Mig",
+                AndradTidPunkt = new DateTime(2026, 5, 14, 0, 0, 0, DateTimeKind.Utc),
+                AndradAv = "Mig",
+                MetaDataVersion = (decimal?)1.0,
+                SakerhetsKlassRiktighet = "sk0",
+                SakerhetsKlassTillganglighet = "sk1",
+                MetaDataSpecifikationModelVersion = "1.0",
             }
         };
 

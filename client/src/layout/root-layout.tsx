@@ -28,7 +28,7 @@ import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
 import PictureAsPdfOutlinedIcon from "@mui/icons-material/PictureAsPdfOutlined";
 
 import { getInitials, useAuth } from "../hooks/useAuth";
-import { useMetadata } from "../hooks/useMetadata";
+import { useMetadata, useMetadataTechDescription } from "../hooks/useMetadata";
 import { useManagementPlan } from "../hooks/useManagementPlan";
 import { SquareSpinnerComponent } from "../components/square-progress";
 import { useClientConfig } from "../config/client-config";
@@ -75,12 +75,15 @@ export function RootLayout({ mode, onToggleMode }: RootLayoutProps) {
   );
 
   const metadataQuery = useMetadata();
+  const metadataTechDescriptionQuery = useMetadataTechDescription();
   const managementPlanQuery = useManagementPlan();
 
   const metadataCount = metadataQuery.data?.length ?? 0;
   const managementPlanCount = managementPlanQuery.data?.length ?? 0;
   const isPdfDataLoading =
-    metadataQuery.isLoading || managementPlanQuery.isLoading;
+    metadataQuery.isLoading ||
+    managementPlanQuery.isLoading ||
+    metadataTechDescriptionQuery.isLoading;
   const pdfMenuOpen = Boolean(pdfMenuAnchor);
 
   const handlePdfMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -105,16 +108,22 @@ export function RootLayout({ mode, onToggleMode }: RootLayoutProps) {
       window.setTimeout(() => {
         try {
           if (kind === "metadata") {
-            generateAllMetadataPDF(metadataItems);
+            generateAllMetadataPDF(
+              metadataItems,
+              metadataTechDescriptionQuery.data ?? [],
+            );
           } else {
-            generateAllManagementPlanPDF(managementPlanItems);
+            generateAllManagementPlanPDF(
+              managementPlanItems,
+              metadataTechDescriptionQuery.data ?? [],
+            );
           }
         } finally {
           setIsPdfExporting(false);
         }
       }, 0);
     },
-    [metadataQuery.data, managementPlanQuery.data],
+    [metadataQuery.data, managementPlanQuery.data, metadataTechDescriptionQuery.data],
   );
 
   React.useEffect(() => {

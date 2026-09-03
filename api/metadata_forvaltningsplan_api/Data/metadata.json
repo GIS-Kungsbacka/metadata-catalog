@@ -9,7 +9,7 @@
     "SchemaNamn": "sk0_schema_test",
     "Namn": "lekplatser_test_123",
     "Beskrivning": "Test beskrivning",
-    "Ursprung": ["Extern", "organisation"],
+    "Ursprung": [ "Extern", "organisation" ],
     "Syfte": "Att identifiera alla lekplatser och ta en kopp kaffe",
     "Metod": "Fjärranalys",
     "MetodUrl": "https://example.com/metod",
@@ -31,7 +31,14 @@
     "KolumnBeskrivningUrl": "https://example.com/kolumner",
     "Status": "granskas",
     "Handlaggare": "Jag",
-    "MetaDataVersion": "1.0"
+    "SkapadTidPunkt": "2026-04-14T00:00:00Z",
+    "SkapadAv": "Mig",
+    "AndradTidPunkt": "2026-05-14T00:00:00Z",
+    "AndradAv": "Mig",
+    "MetaDataVersion": 1.0,
+    "SakerhetsKlassRiktighet": "sk0",
+    "SakerhetsKlassTillganglighet": "sk1",
+    "MetaDataSpecifikationModelVersion": "1.0"
   },
   {
     "Gid": 2,
@@ -41,9 +48,9 @@
     "SakerhetsKlass": "sk0_test",
     "DataKallaTyp": "{Extern,organisation}",
     "SchemaNamn": "sk0_schema_test",
-    "Namn": "lekplatser_test_123",
+    "Namn": "lekplatser_test",
     "Beskrivning": "Test beskrivning",
-    "Ursprung": ["Extern", "organisation"],
+    "Ursprung": [ "Extern", "organisation" ],
     "Syfte": "Att identifiera alla lekplatser och ta en kopp kaffe",
     "Metod": "Fjärranalys",
     "MetodUrl": "https://example.com/metod",
@@ -65,6 +72,13 @@
     "KolumnBeskrivningUrl": "https://example.com/kolumner",
     "Status": "granskas",
     "Handlaggare": "Jag",
-    "MetaDataVersion": "1.0"
+    "SkapadTidPunkt": "2026-04-14T00:00:00Z",
+    "SkapadAv": "Mig",
+    "AndradTidPunkt": "2026-05-14T00:00:00Z",
+    "AndradAv": "Mig",
+    "MetaDataVersion": 1.0,
+    "SakerhetsKlassRiktighet": "sk0",
+    "SakerhetsKlassTillganglighet": "sk1",
+    "MetaDataSpecifikationModelVersion": "1.0"
   }
 ]

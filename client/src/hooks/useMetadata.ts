@@ -3,6 +3,8 @@ import { metadataRequests } from "../api/metadata-requests";
 import type { Metadata } from "../types/metadata";
 import { metadataColumnDescRequests } from "../api/metadata-columndescription-requests";
 import type { MetadataColumnDescription } from "../types/metadata-columndescription";
+import { metadataTechDescriptionRequests } from "../api/metadata-techdescription-requests";
+import type { MetadataTechDescription } from "../types/metadata-techdescription";
 
 type Options = {
   enabled?: boolean;
@@ -39,6 +41,27 @@ export const useMetadataColumnDescription = (
   return useQuery({
     queryKey: ["metadataColumnDescription"],
     queryFn: metadataColumnDescRequests.getAll,
+    enabled: options?.enabled ?? true,
+  });
+};
+
+export const useMetadataTechDescription = (
+  options?: Options
+): UseQueryResult<MetadataTechDescription[]> => {
+  return useQuery({
+    queryKey: ["metadataTechDescription"],
+    queryFn: metadataTechDescriptionRequests.getAll,
+    enabled: options?.enabled ?? true,
+  });
+};
+
+export const useMetadataTechDescriptionById = (
+  gid: number,
+  options?: Options
+): UseQueryResult<MetadataTechDescription> => {
+  return useQuery({
+    queryKey: ["metadataTechDescription", gid],
+    queryFn: () => metadataTechDescriptionRequests.getById(gid),
     enabled: options?.enabled ?? true,
   });
 };

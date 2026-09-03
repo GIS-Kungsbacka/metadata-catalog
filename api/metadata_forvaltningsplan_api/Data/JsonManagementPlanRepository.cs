@@ -43,7 +43,7 @@ namespace metadata_forvaltningsplan_api.Data
                     DatakallaTyp = "{Extern,organisation}",
                     SchemaNamn = "sk0_schema_test",
                     Namn = "lekplatser_test_123",
-                    Titel = "lekplatser_test_123",
+                    Titel = "Lekplatser",
                     DataAgare = "Testnamn",
                     DataForvaltare = "Jag",
                     DataAdministrator = ["Jag"],
@@ -62,11 +62,12 @@ namespace metadata_forvaltningsplan_api.Data
                     Integration = ["Nej"],
                     Status = "granskas",
                     Handlaggare = "Jag",
-                    ForvaltningsplanVersion = "1.0",
-                    SkapadTidPunkt = DateTimeOffset.Parse("2026-02-14T15:00:05.462671+01:00"),
+                    ForvaltningsplanVersion = (decimal?)1.0,
+                    SkapadTidPunkt = new DateTime(2026, 4, 14, 0, 0, 0, DateTimeKind.Utc),
                     SkapadAv = "system",
-                    AndradTidPunkt = DateTimeOffset.Parse("2026-02-14T15:00:05.462671+01:00"),
-                    AndradAv = "system"
+                    AndradTidPunkt = new DateTime(2026, 4, 14, 0, 0, 0, DateTimeKind.Utc),
+                    AndradAv = "system",
+                    ForvaltningsPlanModelVersion = "1.0"
                 }
             };
 

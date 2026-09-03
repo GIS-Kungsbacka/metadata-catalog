@@ -1,6 +1,7 @@
 import jsPDF from "jspdf";
 import type { Metadata } from "../types/metadata";
 import type { ManagementPlan } from "../types/management-plan";
+import type { MetadataTechDescription } from "../types/metadata-techdescription";
 
 const metadataFieldLabels: Partial<Record<keyof Metadata, string>> = {
   namn: "Namn",
@@ -34,6 +35,16 @@ const metadataFieldLabels: Partial<Record<keyof Metadata, string>> = {
   relateradeResurser: "Relaterade resurser",
   kolumnBeskrivningUrl: "Kolumnbeskrivning URL",
   metaDataVersion: "Version",
+};
+
+export const metadataTechDescriptionFieldLabels: Partial<
+  Record<keyof MetadataTechDescription, string>
+> = {
+  datatype: "Datatyp",
+  srid: "SRID",
+  geometryDimension: "Geometridimension",
+  geometryType: "Geometrityp",
+  geometryColumn: "Geometrikolumn",
 };
 
 const managementPlanFieldLabels: Partial<Record<keyof ManagementPlan, string>> =
@@ -115,14 +126,20 @@ export const metadataSections: Array<{
     title: "Struktur och relationer",
     keys: ["kolumnBeskrivningUrl", "relateradeResurser"],
   },
+];
+
+export const metadataTechDescriptionSections: Array<{
+  title: string;
+  keys: (keyof MetadataTechDescription)[];
+}> = [
   {
-    title: "Status",
+    title: "Teknisk beskrivning",
     keys: [
-      "arendeNummerOpenE",
-      "bestallareNamn",
-      "bestallareEpost",
-      "handlaggare",
-      "status",
+      "datatype",
+      "srid",
+      "geometryDimension",
+      "geometryType",
+      "geometryColumn",
     ],
   },
 ];
@@ -142,7 +159,6 @@ export const managementPlanSections: Array<{
       "dataForvaltare",
       "dataAdministrator",
       "dataKonsument",
-      "handlaggare",
     ],
   },
   {
@@ -169,17 +185,6 @@ export const managementPlanSections: Array<{
       "skapadAv",
       "andradTidPunkt",
       "andradAv",
-    ],
-  },
-  {
-    title: "Status",
-    keys: [
-      "arendeNummberOpenE",
-      "bestallareNamn",
-      "bestallareEpost",
-      "sakerhetsklass",
-      "datakallaTyp",
-      "status",
     ],
   },
 ];
@@ -269,11 +274,51 @@ function createPdfTextWriter(doc: jsPDF) {
 
 type PdfTextWriter = ReturnType<typeof createPdfTextWriter>;
 
+function findTechDescription(
+  items: MetadataTechDescription[],
+  schemaNamn?: string | null,
+  namn?: string | null,
+): MetadataTechDescription | undefined {
+  const schema = (schemaNamn ?? "").trim().toLowerCase();
+  const name = (namn ?? "").trim().toLowerCase();
+  if (!schema || !name) return undefined;
+
+  return items.find(
+    (item) =>
+      (item.schemaNamn ?? "").trim().toLowerCase() === schema &&
+      (item.namn ?? "").trim().toLowerCase() === name,
+  );
+}
+
+function appendTechDescriptionSections(
+  writer: PdfTextWriter,
+  techDescription?: MetadataTechDescription | null,
+) {
+  if (!techDescription) return;
+
+  const { addText, addSpacer } = writer;
+  for (const section of metadataTechDescriptionSections) {
+    addText(section.title, 14, true);
+    addSpacer(3);
+
+    for (const key of section.keys) {
+      const label = metadataTechDescriptionFieldLabels[key] ?? String(key);
+      const value = formatValue(techDescription[key], String(key));
+      addText(`${label}: ${value}`, 11);
+    }
+
+    addSpacer(5);
+  }
+}
+
 function appendMetadataContent(
   writer: PdfTextWriter,
   title: string,
   metadata: Metadata,
-  options?: { subtitle?: string },
+  options?: {
+    subtitle?: string;
+    techDescription?: MetadataTechDescription | null;
+  },
 ) {
   const { addText, addSpacer } = writer;
 
@@ -308,12 +353,17 @@ function appendMetadataContent(
 
     addSpacer(5);
   }
+
+  appendTechDescriptionSections(writer, options?.techDescription);
 }
 
 function appendManagementPlanContent(
   writer: PdfTextWriter,
   title: string,
   plan: ManagementPlan,
+  options?: {
+    techDescription?: MetadataTechDescription | null;
+  },
 ) {
   const { addText, addSpacer } = writer;
 
@@ -341,12 +391,17 @@ function appendManagementPlanContent(
 
     addSpacer(5);
   }
+
+  appendTechDescriptionSections(writer, options?.techDescription);
 }
 
 export function generateMetadataPDF(
   title: string,
   metadata: Metadata,
-  options?: { subtitle?: string },
+  options?: {
+    subtitle?: string;
+    techDescription?: MetadataTechDescription | null;
+  },
 ) {
   const doc = new jsPDF();
   const writer = createPdfTextWriter(doc);
@@ -363,10 +418,13 @@ export function generateMetadataPDF(
 export function generateManagementPlanPDF(
   title: string,
   plan: ManagementPlan,
+  options?: {
+    techDescription?: MetadataTechDescription | null;
+  },
 ) {
   const doc = new jsPDF();
   const writer = createPdfTextWriter(doc);
-  appendManagementPlanContent(writer, title, plan);
+  appendManagementPlanContent(writer, title, plan, options);
 
   const keySuffix =
     `${(plan.schemaNamn ?? "").trim()}_${(plan.namn ?? "").trim()}`.trim() ||
@@ -376,7 +434,10 @@ export function generateManagementPlanPDF(
   doc.save(filename);
 }
 
-export function generateAllMetadataPDF(items: Metadata[]) {
+export function generateAllMetadataPDF(
+  items: Metadata[],
+  techDescriptions: MetadataTechDescription[] = [],
+) {
   if (items.length === 0) return;
 
   const doc = new jsPDF();
@@ -389,13 +450,22 @@ export function generateAllMetadataPDF(items: Metadata[]) {
   for (const metadata of items) {
     writer.startNewPage();
     const title = metadata.namn?.trim() || "Metadata";
-    appendMetadataContent(writer, title, metadata);
+    appendMetadataContent(writer, title, metadata, {
+      techDescription: findTechDescription(
+        techDescriptions,
+        metadata.schemaNamn,
+        metadata.namn,
+      ),
+    });
   }
 
   doc.save(`Metadatakatalog_${todaySuffix()}.pdf`);
 }
 
-export function generateAllManagementPlanPDF(items: ManagementPlan[]) {
+export function generateAllManagementPlanPDF(
+  items: ManagementPlan[],
+  techDescriptions: MetadataTechDescription[] = [],
+) {
   if (items.length === 0) return;
 
   const doc = new jsPDF();
@@ -408,7 +478,13 @@ export function generateAllManagementPlanPDF(items: ManagementPlan[]) {
   for (const plan of items) {
     writer.startNewPage();
     const title = plan.titel?.trim() || plan.namn?.trim() || "Förvaltningsplan";
-    appendManagementPlanContent(writer, title, plan);
+    appendManagementPlanContent(writer, title, plan, {
+      techDescription: findTechDescription(
+        techDescriptions,
+        plan.schemaNamn,
+        plan.namn,
+      ),
+    });
   }
 
   doc.save(`Forvaltningsplan_${todaySuffix()}.pdf`);

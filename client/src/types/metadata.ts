@@ -30,5 +30,5 @@ export interface Metadata {
   kolumnBeskrivningUrl?: string | null;
   status?: string | null;
   handlaggare?: string | null;
-  metaDataVersion?: string | null;
+  metaDataVersion?: number | null;
 }

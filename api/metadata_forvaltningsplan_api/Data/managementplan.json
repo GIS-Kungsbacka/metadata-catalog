@@ -8,7 +8,7 @@
     "DatakallaTyp": "{Extern,organisation}",
     "SchemaNamn": "sk0_schema_test",
     "Namn": "lekplatser_test_123",
-    "Titel": "lekplatser_test_123",
+    "Titel": "Lekplatser",
     "DataAgare": "Testnamn",
     "DataForvaltare": "Jag",
     "DataAdministrator": [ "Jag" ],
@@ -28,9 +28,10 @@
     "Status": "granskas",
     "Handlaggare": "Jag",
     "ForvaltningsplanVersion": "1.0",
-    "SkapadTidPunkt": "2026-02-14T15:00:05.462671+01:00",
+    "SkapadTidPunkt": "2026-04-14T00:00:00Z",
     "SkapadAv": "system",
-    "AndradTidPunkt": "2026-02-14T15:00:05.462671+01:00",
-    "AndradAv": "system"
+    "AndradTidPunkt": "2026-04-14T00:00:00Z",
+    "AndradAv": "system",
+    "ForvaltningsplanModelVersion": "1.0"
   }
 ]

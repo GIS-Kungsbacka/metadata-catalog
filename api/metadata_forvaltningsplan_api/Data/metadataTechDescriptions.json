@@ -1,0 +1,22 @@
+[
+  {
+    "gid": 1,
+    "schemaNamn": "sk0_schema_test",
+    "namn": "lekplatser_test_123",
+    "datatype": "geometry",
+    "srid": 3006,
+    "geometryDimension": "2",
+    "geometryType": "POLYGON",
+    "geometryColumn": "geom"
+  },
+  {
+    "gid": 2,
+    "schemaNamn": "sk0_schema_test",
+    "namn": "lekplatser_test",
+    "datatype": "geometry",
+    "srid": 3006,
+    "geometryDimension": "2",
+    "geometryType": "POINT",
+    "geometryColumn": "geom"
+  }
+]
