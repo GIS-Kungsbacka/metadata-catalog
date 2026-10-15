@@ -198,7 +198,7 @@ export default function MetadataCatalog() {
     <Container maxWidth="xl" sx={{ mt: { xs: 1, md: 4 }, mb: 6 }}>
       <Box sx={{ mb: 2, textAlign: "center" }}>
         <Typography variant="h4" sx={{ fontWeight: 800, mb: 1, mr: 1 }}>
-          Metadatakatalog för geodata
+          Geodatakatalog
         </Typography>
         <Typography variant="body2" sx={{ mb: 5 }}>
           Sök efter geodatamängder...

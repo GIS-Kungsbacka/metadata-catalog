@@ -123,7 +123,11 @@ export function RootLayout({ mode, onToggleMode }: RootLayoutProps) {
         }
       }, 0);
     },
-    [metadataQuery.data, managementPlanQuery.data, metadataTechDescriptionQuery.data],
+    [
+      metadataQuery.data,
+      managementPlanQuery.data,
+      metadataTechDescriptionQuery.data,
+    ],
   );
 
   React.useEffect(() => {
@@ -170,7 +174,7 @@ export function RootLayout({ mode, onToggleMode }: RootLayoutProps) {
           }}
         >
           <Typography variant="h5" sx={{ fontWeight: 700 }}>
-            Metadataportalen
+            Geodataportalen
           </Typography>
           <Typography variant="body2" sx={{ opacity: 0.75 }}>
             Version 1.0
